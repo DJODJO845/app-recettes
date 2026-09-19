@@ -1,0 +1,4 @@
+# Ce fichier est nécessaire pour que Prisma Migrate fonctionne.
+# En savoir plus : https://pris.ly/d/migrate-lock-file
+
+provider = "postgresql"
