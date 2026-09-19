@@ -1,0 +1,16 @@
+{
+  "name": "livre-recettes-urssaf",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "App Shopify : livre des recettes et CA encaissé à déclarer à l'URSSAF pour micro-entrepreneurs.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

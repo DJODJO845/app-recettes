@@ -1,0 +1,73 @@
+{
+  "_avertissement": "Toute valeur ici doit être vérifiée sur urssaf.fr / autoentrepreneur.urssaf.fr / service-public.fr avant mise en ligne, puis au moins une fois par an. Ne jamais coder ces chiffres en dur ailleurs dans l'application : toujours lire ce fichier.",
+  "plafondsCA": {
+    "commerce": {
+      "montant": 203100,
+      "devise": "EUR",
+      "periode": "annuelle",
+      "activite": "Vente de marchandises, restauration, hébergement",
+      "valableAnnees": [2026, 2027, 2028],
+      "source": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/toutes-les-actualites/2026--modification-des-seuils-de.html",
+      "dateVerification": "2026-09-19"
+    },
+    "services": {
+      "montant": 83600,
+      "devise": "EUR",
+      "periode": "annuelle",
+      "activite": "Prestations de services commerciales et artisanales, professions libérales",
+      "valableAnnees": [2026, 2027, 2028],
+      "source": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/toutes-les-actualites/2026--modification-des-seuils-de.html",
+      "dateVerification": "2026-09-19"
+    },
+    "mixte": {
+      "note": "CA global <= plafond commerce, dont la part services <= plafond services.",
+      "plafondGlobal": 203100,
+      "plafondPartServices": 83600,
+      "source": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/toutes-les-actualites/2026--modification-des-seuils-de.html",
+      "dateVerification": "2026-09-19"
+    }
+  },
+  "seuilsAlerte": {
+    "avertissement": 0.8,
+    "critique": 0.95,
+    "note": "Pourcentage du plafond annuel applicable, cf. section 4 du cahier des charges (V1, fonctionnalité 4)."
+  },
+  "tauxCotisations": {
+    "_avertissement": "Non utilisés en V1 (aucune estimation de cotisations dans le MVP, cf. section 4 V2). Conservés ici pour préparer la V2, À VÉRIFIER avant toute utilisation.",
+    "venteMarchandises": {
+      "taux": null,
+      "source": "https://www.urssaf.fr/accueil/independant/independant-creer-activite/simulateurs-independant.html",
+      "dateVerification": null,
+      "statut": "non vérifié - ne pas utiliser tel quel"
+    },
+    "prestationsServicesBIC": {
+      "taux": null,
+      "source": "https://www.urssaf.fr/accueil/independant/independant-creer-activite/simulateurs-independant.html",
+      "dateVerification": null,
+      "statut": "non vérifié - ne pas utiliser tel quel"
+    },
+    "prestationsServicesBNC": {
+      "taux": null,
+      "source": "https://www.urssaf.fr/accueil/independant/independant-creer-activite/simulateurs-independant.html",
+      "dateVerification": null,
+      "statut": "non vérifié - ne pas utiliser tel quel"
+    }
+  },
+  "franchiseTVA": {
+    "_avertissement": "Non utilisé en V1 (l'app ne gère pas la TVA), conservé pour référence future. À VÉRIFIER avant toute utilisation.",
+    "seuilVenteMarchandises": null,
+    "seuilMajoreVenteMarchandises": null,
+    "seuilServices": null,
+    "seuilMajoreServices": null,
+    "source": "https://www.service-public.fr/professionnels-entreprises/vosdroits/F32353",
+    "dateVerification": null,
+    "statut": "non vérifié - ne pas utiliser tel quel"
+  },
+  "regleEncaissement": {
+    "principe": "Le CA à déclarer est celui effectivement encaissé pendant la période (date de crédit des fonds), jamais le CA facturé.",
+    "commissionsFraisPaiement": "Non déductibles : on déclare le montant brut encaissé.",
+    "fraisLivraison": "Inclus dans le CA à déclarer lorsqu'ils sont payés par le client.",
+    "source": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/une-question/toutes-les-fiches-pratiques/determiner-mon-chiffre-daffaires.html",
+    "dateVerification": "2026-09-19"
+  }
+}

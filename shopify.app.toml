@@ -1,0 +1,23 @@
+# Configuration Shopify app — à compléter avec le vrai client_id une fois le compte
+# Partner créé (section 8 du cahier des charges : pas à la charge de Claude Code).
+name = "Livre des recettes & URSSAF"
+client_id = ""
+application_url = "https://REMPLACER-PAR-URL-RENDER.onrender.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+
+[access_scopes]
+# Lecture seule : l'app ne modifie jamais les commandes.
+scopes = "read_orders,read_all_orders"
+
+[webhooks]
+api_version = "2026-01"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+  uri = "/webhooks/gdpr"
+
+[pos]
+embedded = false
