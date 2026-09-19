@@ -12,7 +12,10 @@ automatically_update_urls_on_dev = true
 
 [access_scopes]
 # Lecture seule : l'app ne modifie jamais les commandes.
-scopes = "read_orders,read_all_orders"
+# read_all_orders retiré temporairement : scope protégé nécessitant une demande
+# d'accès approuvée par Shopify avant de pouvoir être déclaré ici (section 4 de
+# docs/phase-4-test-reel.md). À rajouter une fois la demande approuvée.
+scopes = "read_orders"
 
 [webhooks]
 api_version = "2026-07"
