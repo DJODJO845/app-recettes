@@ -1,0 +1,90 @@
+// Schéma Prisma — Supabase Postgres.
+// Conçu pour l'isolation multi-boutiques : chaque table métier porte `shopDomain` et
+// une politique Row Level Security (RLS) Postgres doit filtrer dessus côté base (cf.
+// docs/phase-2-architecture.md, section SÉCURITÉ). Prisma seul ne suffit pas : la RLS
+// est un filet de sécurité indépendant du code applicatif.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Periodicite {
+  MENSUELLE
+  TRIMESTRIELLE
+}
+
+enum TypeActivite {
+  COMMERCE
+  SERVICES
+  MIXTE
+}
+
+enum NatureLigne {
+  VENTE
+  VENTE_CARTE_CADEAU
+  REGLEMENT_CARTE_CADEAU
+  REMBOURSEMENT
+}
+
+model Boutique {
+  id                 String       @id @default(uuid())
+  shopDomain         String       @unique
+  typeActivite       TypeActivite @default(COMMERCE)
+  periodicite        Periodicite  @default(TRIMESTRIELLE)
+  dateDebutActivite  DateTime
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  lignesLivre LigneLivre[]
+}
+
+// Une ligne = un encaissement ou un remboursement réel. JAMAIS de mise à jour d'une
+// ligne existante après création (pas de méthode "update" exposée côté application) :
+// une correction s'écrit comme une nouvelle ligne, référençant l'originale via
+// `corrigeLigneId`. Conservation obligatoire 10 ans (section 3 du cahier des charges).
+model LigneLivre {
+  id             String      @id @default(uuid())
+  shopDomain     String
+  boutique       Boutique    @relation(fields: [shopDomain], references: [shopDomain])
+
+  // Identifiant de la transaction Shopify d'origine, pour idempotence des imports.
+  transactionId  String      @unique
+
+  dateEncaissement DateTime
+  reference        String
+  // Nom du client si l'accès aux protected customer data est accordé, sinon "Client".
+  // Anonymisé (remplacé par "Client") lors d'un webhook customers/redact, sans jamais
+  // supprimer la ligne elle-même (obligation de conservation 10 ans).
+  client           String
+  nature           NatureLigne
+  montant          Decimal     @db.Decimal(12, 2)
+  modeReglement    String
+  canal            String
+  compteDansCA     Boolean
+  avertissement    String?
+
+  // Renseigné uniquement si cette ligne corrige une ligne antérieure erronée.
+  corrigeLigneId   String?
+
+  createdAt        DateTime    @default(now())
+
+  @@index([shopDomain, dateEncaissement])
+}
+
+// Stockage des sessions Shopify (remplace le stockage SQLite par défaut du template
+// React Router), conforme au choix Supabase de la Phase 2.
+model Session {
+  id          String    @id
+  shop        String
+  state       String
+  isOnline    Boolean   @default(false)
+  scope       String?
+  expires     DateTime?
+  accessToken String
+  userId      BigInt?
+}
