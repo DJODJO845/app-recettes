@@ -6,9 +6,14 @@ import type { LigneLivreDesRecettes } from "../domain/types";
  * fois les credentials disponibles (cf. docs/phase-3-developpement.md).
  */
 export interface DepotLignesLivre {
-  listerParClient(shopDomain: string, nomClient: string): Promise<LigneLivreDesRecettes[]>;
+  /**
+   * Identifie le client par son `clientId` Shopify (GID), pas par son nom affiché :
+   * deux clients peuvent porter le même nom, ce n'est pas un identifiant fiable pour
+   * une obligation RGPD.
+   */
+  listerParClientId(shopDomain: string, clientId: string): Promise<LigneLivreDesRecettes[]>;
   /** Remplace le nom du client par "Client" sur toutes ses lignes ; ne supprime jamais la ligne. */
-  anonymiserClient(shopDomain: string, nomClient: string): Promise<number>;
+  anonymiserClientId(shopDomain: string, clientId: string): Promise<number>;
   /** Supprime toutes les lignes d'une boutique (reçu 48h après désinstallation). */
   supprimerToutesLesLignes(shopDomain: string): Promise<number>;
 }
@@ -20,9 +25,9 @@ export interface DepotLignesLivre {
 export async function traiterDemandeDonneesClient(
   depot: DepotLignesLivre,
   shopDomain: string,
-  nomClient: string,
+  clientId: string,
 ): Promise<LigneLivreDesRecettes[]> {
-  return depot.listerParClient(shopDomain, nomClient);
+  return depot.listerParClientId(shopDomain, clientId);
 }
 
 /**
@@ -35,9 +40,9 @@ export async function traiterDemandeDonneesClient(
 export async function traiterEffacementClient(
   depot: DepotLignesLivre,
   shopDomain: string,
-  nomClient: string,
+  clientId: string,
 ): Promise<number> {
-  return depot.anonymiserClient(shopDomain, nomClient);
+  return depot.anonymiserClientId(shopDomain, clientId);
 }
 
 /**

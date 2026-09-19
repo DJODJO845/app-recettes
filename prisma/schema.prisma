@@ -61,6 +61,9 @@ model LigneLivre {
   // Anonymisé (remplacé par "Client") lors d'un webhook customers/redact, sans jamais
   // supprimer la ligne elle-même (obligation de conservation 10 ans).
   client           String
+  // Identifiant Shopify (GID) du client, utilisé pour retrouver ses lignes de façon
+  // fiable lors des webhooks RGPD (le nom affiché seul n'est pas un identifiant sûr).
+  clientId         String?
   nature           NatureLigne
   montant          Decimal     @db.Decimal(12, 2)
   modeReglement    String
@@ -74,17 +77,28 @@ model LigneLivre {
   createdAt        DateTime    @default(now())
 
   @@index([shopDomain, dateEncaissement])
+  @@index([shopDomain, clientId])
 }
 
 // Stockage des sessions Shopify (remplace le stockage SQLite par défaut du template
-// React Router), conforme au choix Supabase de la Phase 2.
+// React Router), conforme au choix Supabase de la Phase 2. Champs alignés sur ceux
+// attendus par @shopify/shopify-app-session-storage-prisma.
 model Session {
-  id          String    @id
-  shop        String
-  state       String
-  isOnline    Boolean   @default(false)
-  scope       String?
-  expires     DateTime?
-  accessToken String
-  userId      BigInt?
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean?  @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
 }

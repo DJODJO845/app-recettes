@@ -79,6 +79,7 @@ function construireLigne(
     date: transaction.processedAt,
     reference: commande.name,
     client,
+    clientId: commande.clientId,
     nature,
     montant,
     modeReglement: libelleModeReglement(transaction.gateway),

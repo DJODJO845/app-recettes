@@ -1,16 +1,31 @@
 {
+  "include": [
+    "env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".react-router/types/**/*",
+    "config/**/*.json"
+  ],
+  "exclude": ["node_modules"],
   "compilerOptions": {
-    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "removeComments": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2022"],
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
+    "target": "ES2022",
+    "baseUrl": ".",
     "noUncheckedIndexedAccess": true,
-    "types": ["vitest/globals", "node"]
-  },
-  "include": ["app", "config", "prisma"]
+    "types": ["@react-router/node", "vite/client", "@shopify/polaris-types", "vitest/globals"],
+    "rootDirs": [".", "./.react-router/types"]
+  }
 }

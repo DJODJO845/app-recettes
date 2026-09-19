@@ -32,6 +32,12 @@ export interface CommandeShopify {
   sourceName: string;
   /** Nom du client si l'accès aux protected customer data a été accordé, sinon undefined. */
   nomClient?: string;
+  /**
+   * Identifiant Shopify (GID) du client, ex. "gid://shopify/Customer/123". Sert à
+   * retrouver ses lignes de façon fiable pour les webhooks RGPD — le nom affiché
+   * seul n'est pas un identifiant sûr (deux clients peuvent porter le même nom).
+   */
+  clientId?: string;
   /** true si la commande porte sur une carte cadeau vendue (pas une commande réglée avec une carte cadeau). */
   estVenteDeCarteCadeau: boolean;
   transactions: TransactionShopify[];
@@ -51,6 +57,8 @@ export interface LigneLivreDesRecettes {
   /** Référence de commande, ex. "#1042". */
   reference: string;
   client: string;
+  /** Voir `CommandeShopify.clientId`. */
+  clientId?: string;
   nature: NatureLigneLivre;
   /** Positif pour un encaissement, négatif pour un remboursement. */
   montant: number;
