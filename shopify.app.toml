@@ -1,7 +1,6 @@
-# Configuration Shopify app — à compléter avec le vrai client_id une fois le compte
-# Partner créé (section 8 du cahier des charges : pas à la charge de Claude Code).
+# Configuration Shopify app.
 name = "Livre des recettes & URSSAF"
-client_id = ""
+client_id = "5e9776b61adcb708dbfc6cd1914adfdf"
 application_url = "https://REMPLACER-PAR-URL-RENDER.onrender.com"
 embedded = true
 
