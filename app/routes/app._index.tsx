@@ -111,7 +111,7 @@ export default function Dashboard() {
       )}
 
       <s-section>
-        <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+        <s-grid gridTemplateColumns="@container (inline-size < 28rem) 1fr, 1fr 1fr" gap="base">
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="small-200">
               <s-stack direction="inline" gap="small-300" alignItems="center">

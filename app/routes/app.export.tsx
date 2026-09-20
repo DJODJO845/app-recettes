@@ -111,7 +111,7 @@ export default function Export() {
       </s-banner>
 
       <s-section heading="Exporter votre livre des recettes">
-        <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+        <s-grid gridTemplateColumns="@container (inline-size < 28rem) 1fr, 1fr 1fr" gap="base">
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="base">
               <s-stack direction="inline" gap="small-300" alignItems="center">
