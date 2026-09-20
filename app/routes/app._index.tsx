@@ -14,6 +14,7 @@ import { CercleIcone } from "../lib/ui/CercleIcone";
 
 const NOMBRE_DERNIERES_RECETTES = 5;
 const NOMBRE_MOIS_EVOLUTION = 6;
+const JOURS_AVANT_RAPPEL_EXPORT = 30;
 
 const COULEUR_ALERTE: Record<NiveauAlertePlafond, string> = {
   ok: "#008060",
@@ -69,20 +70,26 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const dernieresLignes = await listerDernieresLignes(session.shop, NOMBRE_DERNIERES_RECETTES);
   const evolutionMensuelle = await calculerEvolutionMensuelle(session.shop, NOMBRE_MOIS_EVOLUTION);
 
-  return { totaux, plafond, pourcentagePlafond, dernieresLignes, evolutionMensuelle };
+  const joursDepuisExport = boutique.derniereExportation
+    ? Math.floor((Date.now() - boutique.derniereExportation.getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+  const doitRappelerExport = joursDepuisExport === null || joursDepuisExport >= JOURS_AVANT_RAPPEL_EXPORT;
+
+  return { totaux, plafond, pourcentagePlafond, dernieresLignes, evolutionMensuelle, doitRappelerExport };
 };
 
 const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
 const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
 export default function Dashboard() {
-  const { totaux, plafond, pourcentagePlafond, dernieresLignes, evolutionMensuelle } = useLoaderData<typeof loader>();
+  const { totaux, plafond, pourcentagePlafond, dernieresLignes, evolutionMensuelle, doitRappelerExport } =
+    useLoaderData<typeof loader>();
   const badge = BADGE_ALERTE[totaux.niveauAlerte];
   const maxEvolution = Math.max(...evolutionMensuelle.map((point) => point.ca), 1);
 
   return (
     <s-page heading="Tableau de bord">
-      <BanniereExport />
+      {doitRappelerExport && <BanniereExport />}
 
       {totaux.caPeriodeCourante === 0 && (
         <s-banner tone="info">

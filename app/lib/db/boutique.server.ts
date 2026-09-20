@@ -7,6 +7,7 @@ export interface ReglagesBoutique {
   periodicite: Periodicite;
   dateDebutActivite: Date;
   emailRappel: string | null;
+  derniereExportation: Date | null;
 }
 
 /** Récupère les réglages de la boutique, ou les crée avec des valeurs par défaut. */
@@ -33,6 +34,16 @@ export async function mettreAJourReglages(
     tx.boutique.update({
       where: { shopDomain },
       data: reglages,
+    }),
+  );
+}
+
+/** Appelé par les routes d'export (CSV, PDF) pour ne plus afficher BanniereExport inutilement. */
+export async function enregistrerExportation(shopDomain: string): Promise<void> {
+  await executerAvecContexteBoutique(shopDomain, (tx) =>
+    tx.boutique.update({
+      where: { shopDomain },
+      data: { derniereExportation: new Date() },
     }),
   );
 }
