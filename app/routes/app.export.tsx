@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -10,58 +9,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 /**
- * Récupère le fichier via fetch() (session déjà active, cookies inclus
- * automatiquement) plutôt que par un lien classique : une navigation directe
- * vers ces routes perd les paramètres d'intégration Shopify (host, embedded),
- * ce qui fait échouer l'authentification et affiche une page blanche.
+ * Navigation directe et synchrone, déclenchée dans le même tick que le clic
+ * (pas de fetch()/await avant) : certains navigateurs mobiles annulent
+ * silencieusement une action de téléchargement/ouverture déclenchée après un
+ * appel asynchrone, car elle n'est plus rattachée au geste utilisateur.
+ * Le CSV a un en-tête Content-Disposition: attachment, donc cette navigation
+ * déclenche un téléchargement sans quitter la page actuelle.
  */
-async function telechargerFichier(url: string, nomFichier: string) {
-  const reponse = await fetch(url);
-  const blob = await reponse.blob();
-  const urlObjet = URL.createObjectURL(blob);
-  const lien = document.createElement("a");
-  lien.href = urlObjet;
-  lien.download = nomFichier;
-  lien.click();
-  URL.revokeObjectURL(urlObjet);
+function exporterCSV() {
+  window.location.href = "/app/export/csv";
 }
 
-async function ouvrirVersionImprimable(url: string) {
-  const reponse = await fetch(url);
-  const html = await reponse.text();
-  const blob = new Blob([html], { type: "text/html" });
-  const urlObjet = URL.createObjectURL(blob);
-  window.open(urlObjet, "_blank");
+function exporterPDF() {
+  window.location.href = "/app/export/imprimer";
 }
 
 export default function Export() {
-  const [enCours, setEnCours] = useState<"csv" | "pdf" | null>(null);
-  const [erreur, setErreur] = useState<string | null>(null);
-
-  const exporterCSV = async () => {
-    setEnCours("csv");
-    setErreur(null);
-    try {
-      await telechargerFichier("/app/export/csv", "livre-des-recettes.csv");
-    } catch {
-      setErreur("Échec de l'export CSV, réessayez.");
-    } finally {
-      setEnCours(null);
-    }
-  };
-
-  const exporterPDF = async () => {
-    setEnCours("pdf");
-    setErreur(null);
-    try {
-      await ouvrirVersionImprimable("/app/export/imprimer");
-    } catch {
-      setErreur("Échec de l'ouverture de la version imprimable, réessayez.");
-    } finally {
-      setEnCours(null);
-    }
-  };
-
   return (
     <s-page heading="Export">
       <s-section heading="Exporter votre livre des recettes">
@@ -69,30 +32,15 @@ export default function Export() {
           À conserver 10 ans de votre côté : Shopify supprime les données de l&apos;app
           48h après une désinstallation.
         </s-paragraph>
-        {erreur && (
-          <s-banner tone="critical">
-            <s-paragraph>{erreur}</s-paragraph>
-          </s-banner>
-        )}
         <s-stack direction="inline" gap="base">
-          <s-button
-            onClick={exporterCSV}
-            {...(enCours === "csv" ? { loading: true } : {})}
-          >
-            Export CSV
-          </s-button>
-          <s-button
-            onClick={exporterPDF}
-            {...(enCours === "pdf" ? { loading: true } : {})}
-          >
-            Version imprimable (PDF)
-          </s-button>
+          <s-button onClick={exporterCSV}>Export CSV</s-button>
+          <s-button onClick={exporterPDF}>Version imprimable (PDF)</s-button>
         </s-stack>
         <s-paragraph>
           <s-text color="subdued">
-            Pour le PDF : la version imprimable s&apos;ouvre dans un nouvel onglet,
-            utilisez ensuite « Imprimer → Enregistrer au format PDF » de votre
-            téléphone ou navigateur.
+            Pour le PDF : la version imprimable remplace temporairement l&apos;app —
+            utilisez « Imprimer → Enregistrer au format PDF », puis le bouton
+            retour de votre téléphone pour revenir à l&apos;app.
           </s-text>
         </s-paragraph>
       </s-section>
