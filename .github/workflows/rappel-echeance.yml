@@ -1,0 +1,19 @@
+name: Rappel échéance URSSAF
+
+on:
+  schedule:
+    # 7h UTC chaque jour = 8h ou 9h heure française selon la saison — un
+    # horaire de bureau raisonnable pour recevoir un email, sans dépendre de
+    # secrets supplémentaires côté GitHub pour gérer le fuseau.
+    - cron: "0 7 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  appeler-le-rappel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Appeler le endpoint de rappel d'échéance
+        run: |
+          curl --fail --show-error --silent \
+            -X POST "${{ secrets.APP_URL }}/api/cron/rappels-echeance" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
