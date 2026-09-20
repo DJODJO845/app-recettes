@@ -114,6 +114,7 @@ export default function Reglages() {
               <s-date-field
                 name="dateDebutActivite"
                 label="Date de début d'activité"
+                details="Détermine depuis quand l'app va chercher vos commandes Shopify. La reculer permet de récupérer un historique plus ancien (dans la limite de ce que Shopify autorise)."
                 defaultValue={new Date(boutique.dateDebutActivite).toISOString().slice(0, 10)}
               />
 

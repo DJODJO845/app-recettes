@@ -10,8 +10,23 @@ export interface ReglagesBoutique {
   derniereExportation: Date | null;
 }
 
+// `dateDebutActivite` borne l'import des commandes Shopify (voir
+// importerCommandesRecentes) : à la création, la mettre à "maintenant" ferait
+// que l'import ne récupère RIEN (aucune commande n'a encore été passée après
+// cet instant précis) — un nouvel utilisateur ouvrirait un Dashboard vide sans
+// comprendre pourquoi, alors même qu'il a déjà des ventes. On part donc de 60
+// jours en arrière par défaut : c'est la profondeur maximale accessible sans
+// l'approbation du scope protégé `read_all_orders` (cf. docs/phase-2-architecture.md),
+// donc ça maximise ce qui s'importe tout de suite sans action du marchand.
+// Une fois `read_all_orders` approuvé, il peut reculer cette date dans Réglages
+// pour récupérer un historique plus ancien.
+const NOMBRE_JOURS_HISTORIQUE_PAR_DEFAUT = 60;
+
 /** Récupère les réglages de la boutique, ou les crée avec des valeurs par défaut. */
 export async function obtenirOuCreerBoutique(shopDomain: string): Promise<ReglagesBoutique> {
+  const dateDebutParDefaut = new Date();
+  dateDebutParDefaut.setUTCDate(dateDebutParDefaut.getUTCDate() - NOMBRE_JOURS_HISTORIQUE_PAR_DEFAUT);
+
   return executerAvecContexteBoutique(shopDomain, (tx) =>
     tx.boutique.upsert({
       where: { shopDomain },
@@ -20,7 +35,7 @@ export async function obtenirOuCreerBoutique(shopDomain: string): Promise<Reglag
         shopDomain,
         typeActivite: "COMMERCE",
         periodicite: "TRIMESTRIELLE",
-        dateDebutActivite: new Date(),
+        dateDebutActivite: dateDebutParDefaut,
       },
     }),
   );
