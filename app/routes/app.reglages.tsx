@@ -46,13 +46,13 @@ export default function Reglages() {
             <s-stack direction="block" gap="base">
               <s-select name="typeActivite" label="Type d'activité" icon="business-entity">
                 <s-option value="COMMERCE" defaultSelected={boutique.typeActivite === "COMMERCE"}>
-                  Vente de marchandises (commerce)
+                  Commerce
                 </s-option>
                 <s-option value="SERVICES" defaultSelected={boutique.typeActivite === "SERVICES"}>
-                  Prestations de services
+                  Services
                 </s-option>
                 <s-option value="MIXTE" defaultSelected={boutique.typeActivite === "MIXTE"}>
-                  Mixte (commerce + services)
+                  Mixte
                 </s-option>
               </s-select>
 

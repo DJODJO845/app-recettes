@@ -55,9 +55,9 @@ function CercleIcone({
 }
 
 const BADGE_ALERTE = {
-  ok: { tone: "success", label: "Sous contrôle", icone: "check-circle-filled" },
-  avertissement: { tone: "warning", label: "À surveiller", icone: "alert-triangle" },
-  critique: { tone: "critical", label: "Seuil critique", icone: "alert-diamond" },
+  ok: { tone: "success", label: "OK", icone: "check-circle-filled" },
+  avertissement: { tone: "warning", label: "Attention", icone: "alert-triangle" },
+  critique: { tone: "critical", label: "Critique", icone: "alert-diamond" },
 } as const satisfies Record<NiveauAlertePlafond, { tone: "success" | "warning" | "critical"; label: string; icone: string }>;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -131,12 +131,12 @@ export default function Dashboard() {
                 <CercleIcone type="gauge" tone={badge.tone} fond={TEINTE_ALERTE[totaux.niveauAlerte]} />
                 <s-text type="strong" color="subdued">Plafond annuel</s-text>
               </s-stack>
-              <s-stack direction="inline" gap="small-200" alignItems="center">
-                <div style={{ color: COULEUR_ALERTE[totaux.niveauAlerte], fontSize: "28px", fontWeight: 700, lineHeight: 1.2 }}>
-                  {pourcentagePlafond}%
-                </div>
+              <div style={{ color: COULEUR_ALERTE[totaux.niveauAlerte], fontSize: "28px", fontWeight: 700, lineHeight: 1.2 }}>
+                {pourcentagePlafond}%
+              </div>
+              <div>
                 <s-badge tone={badge.tone} icon={badge.icone}>{badge.label}</s-badge>
-              </s-stack>
+              </div>
               <s-text color="subdued">
                 {formateurEUR.format(totaux.caAnnuelEncaisse)} sur {formateurEUR.format(plafond)}
               </s-text>
