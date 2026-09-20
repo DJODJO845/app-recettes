@@ -10,12 +10,15 @@ import { MentionLegale } from "../lib/ui/MentionLegale";
 import type { NatureLigneLivre } from "../lib/domain/types";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
+// Dérivé de LIBELLES_NATURE (pas redéfini en dur ici) pour ne jamais pouvoir dériver
+// de la traduction utilisée ailleurs dans l'app — même souci déjà rencontré et
+// corrigé pour le mode de règlement.
 const NATURE_FILTRES: { value: "TOUTES" | NatureLigneLivre; label: string }[] = [
   { value: "TOUTES", label: "Toutes" },
-  { value: "vente", label: "Vente" },
-  { value: "vente_carte_cadeau", label: "Vente de carte cadeau" },
-  { value: "reglement_carte_cadeau", label: "Règlement par carte cadeau" },
-  { value: "remboursement", label: "Remboursement" },
+  ...(Object.keys(LIBELLES_NATURE) as NatureLigneLivre[]).map((nature) => ({
+    value: nature,
+    label: LIBELLES_NATURE[nature],
+  })),
 ];
 
 const BADGE_NATURE = {
