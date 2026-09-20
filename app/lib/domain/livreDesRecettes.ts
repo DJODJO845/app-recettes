@@ -16,7 +16,17 @@ const LIBELLES_MODE_REGLEMENT: Record<string, string> = {
   bogus: "Paiement test (boutique de démonstration)",
 };
 
-function libelleModeReglement(gateway: string): string {
+/**
+ * Traduit un identifiant de gateway Shopify (ex. "cash") ou un libellé déjà stocké
+ * en base en libellé affichable. Comme une ligne du livre n'est jamais modifiée après
+ * création, d'anciennes lignes peuvent contenir un identifiant brut enregistré avant
+ * qu'il ne soit ajouté à `LIBELLES_MODE_REGLEMENT` (ex. "cash" avant son ajout) : cette
+ * fonction est donc aussi appelée à l'affichage sur les valeurs déjà stockées, pour que
+ * les anciennes et nouvelles lignes du même mode de règlement partagent le même libellé.
+ * Un libellé déjà traduit (ex. "Carte bancaire") n'est pas une clé de la table, donc il
+ * ressort inchangé : l'opération est sans effet si elle est appliquée deux fois.
+ */
+export function libelleModeReglement(gateway: string): string {
   return LIBELLES_MODE_REGLEMENT[gateway] ?? gateway;
 }
 

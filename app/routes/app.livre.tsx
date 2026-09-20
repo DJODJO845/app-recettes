@@ -3,6 +3,7 @@ import { useLoaderData, useSearchParams } from "react-router";
 import { useMemo, useRef, useState } from "react";
 import { authenticate } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
+import { libelleModeReglement } from "../lib/domain/livreDesRecettes";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import type { NatureLigneLivre } from "../lib/domain/types";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
@@ -59,7 +60,7 @@ export default function LivreDesRecettes() {
   const [modeFiltre, setModeFiltre] = useState<string>("TOUS");
 
   const modesDisponibles = useMemo(
-    () => Array.from(new Set(lignes.map((ligne) => ligne.modeReglement))).sort(),
+    () => Array.from(new Set(lignes.map((ligne) => libelleModeReglement(ligne.modeReglement)))).sort(),
     [lignes],
   );
 
@@ -68,7 +69,7 @@ export default function LivreDesRecettes() {
       lignes.filter(
         (ligne) =>
           (natureFiltre === "TOUTES" || ligne.nature === natureFiltre) &&
-          (modeFiltre === "TOUS" || ligne.modeReglement === modeFiltre),
+          (modeFiltre === "TOUS" || libelleModeReglement(ligne.modeReglement) === modeFiltre),
       ),
     [lignes, natureFiltre, modeFiltre],
   );
@@ -162,7 +163,7 @@ export default function LivreDesRecettes() {
                       )}
                     </s-stack>
                   </s-table-cell>
-                  <s-table-cell>{ligne.modeReglement}</s-table-cell>
+                  <s-table-cell>{libelleModeReglement(ligne.modeReglement)}</s-table-cell>
                   <s-table-cell>{ligne.canal}</s-table-cell>
                   <s-table-cell>
                     <s-text tone={ligne.montant < 0 ? "critical" : "success"} type="strong">
