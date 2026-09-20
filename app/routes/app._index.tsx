@@ -3,7 +3,7 @@ import { useLoaderData } from "react-router";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
 import { authenticate } from "../shopify.server";
-import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
+import { obtenirOuCreerBoutique, enregistrerImportation } from "../lib/db/boutique.server";
 import { calculerTotauxDashboard, calculerEvolutionMensuelle } from "../lib/db/totaux.server";
 import { listerDernieresLignes } from "../lib/db/lignesLivre.server";
 import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.server";
@@ -15,6 +15,10 @@ import { CercleIcone } from "../lib/ui/CercleIcone";
 const NOMBRE_DERNIERES_RECETTES = 5;
 const NOMBRE_MOIS_EVOLUTION = 6;
 const JOURS_AVANT_RAPPEL_EXPORT = 30;
+// Marge de recouvrement lors d'un import incrémental, pour couvrir tout décalage
+// d'indexation côté Shopify entre deux visites plutôt que de risquer de manquer
+// une commande créée juste avant le dernier import.
+const JOURS_MARGE_IMPORT_INCREMENTAL = 1;
 
 const COULEUR_ALERTE: Record<NiveauAlertePlafond, string> = {
   ok: "#008060",
@@ -44,7 +48,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const boutique = await obtenirOuCreerBoutique(session.shop);
 
   try {
-    await importerCommandesRecentes(admin, session.shop, boutique.dateDebutActivite);
+    // Import incrémental : on ne repart de dateDebutActivite en entier que la
+    // première fois (ou juste après un changement de cette date, qui remet
+    // derniereImportation à null — voir mettreAJourReglages) ; sinon on ne
+    // redemande à Shopify que les commandes créées depuis le dernier import
+    // réussi, pour éviter de retélécharger tout l'historique à chaque visite.
+    const depuis = boutique.derniereImportation
+      ? new Date(boutique.derniereImportation.getTime() - JOURS_MARGE_IMPORT_INCREMENTAL * 24 * 60 * 60 * 1000)
+      : boutique.dateDebutActivite;
+
+    await importerCommandesRecentes(admin, session.shop, depuis);
+    await enregistrerImportation(session.shop);
   } catch (erreur) {
     // On n'empêche pas l'affichage du tableau de bord si l'import échoue (ex. souci
     // réseau ponctuel) : on montre les données déjà en base et on journalise l'erreur.

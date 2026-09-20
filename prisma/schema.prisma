@@ -44,6 +44,12 @@ model Boutique {
   // d'export (BanniereExport) que si le marchand n'a pas exporté récemment,
   // plutôt qu'à chaque visite du Dashboard.
   derniereExportation DateTime?
+  // Date du dernier import réussi des commandes Shopify (importerCommandesRecentes),
+  // pour importer seulement les commandes récentes à chaque visite plutôt que de
+  // retélécharger tout l'historique depuis dateDebutActivite à chaque fois. Remise à
+  // null quand dateDebutActivite change (mettreAJourReglages), pour forcer un import
+  // complet depuis la nouvelle date.
+  derniereImportation DateTime?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 

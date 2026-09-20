@@ -8,6 +8,7 @@ export interface ReglagesBoutique {
   dateDebutActivite: Date;
   emailRappel: string | null;
   derniereExportation: Date | null;
+  derniereImportation: Date | null;
 }
 
 // `dateDebutActivite` borne l'import des commandes Shopify (voir
@@ -48,7 +49,15 @@ export async function mettreAJourReglages(
   return executerAvecContexteBoutique(shopDomain, (tx) =>
     tx.boutique.update({
       where: { shopDomain },
-      data: reglages,
+      data: {
+        ...reglages,
+        // Un changement de date de début d'activité invalide l'import incrémental :
+        // sans ce reset, la prochaine visite du Dashboard repartirait de
+        // derniereImportation (récente) plutôt que de la nouvelle dateDebutActivite
+        // (potentiellement bien plus ancienne), et l'historique nouvellement demandé
+        // ne serait jamais importé.
+        ...(reglages.dateDebutActivite ? { derniereImportation: null } : {}),
+      },
     }),
   );
 }
@@ -59,6 +68,16 @@ export async function enregistrerExportation(shopDomain: string): Promise<void> 
     tx.boutique.update({
       where: { shopDomain },
       data: { derniereExportation: new Date() },
+    }),
+  );
+}
+
+/** Appelé après un import réussi des commandes Shopify (voir app._index.tsx), pour rendre les imports suivants incrémentaux. */
+export async function enregistrerImportation(shopDomain: string): Promise<void> {
+  await executerAvecContexteBoutique(shopDomain, (tx) =>
+    tx.boutique.update({
+      where: { shopDomain },
+      data: { derniereImportation: new Date() },
     }),
   );
 }
