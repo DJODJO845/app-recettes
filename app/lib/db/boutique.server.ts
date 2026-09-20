@@ -81,3 +81,17 @@ export async function enregistrerImportation(shopDomain: string): Promise<void> 
     }),
   );
 }
+
+/**
+ * Webhook `shop/redact` : supprime la fiche Boutique elle-même (dont l'email de
+ * rappel, une donnée personnelle). À appeler seulement après avoir supprimé toutes
+ * les lignes du livre de cette boutique (contrainte de clé étrangère LigneLivre →
+ * Boutique, sans suppression en cascade). `deleteMany` plutôt que `delete` : pas
+ * d'erreur si la fiche a déjà été supprimée (le webhook peut être rejoué par Shopify).
+ */
+export async function supprimerBoutique(shopDomain: string): Promise<number> {
+  const resultat = await executerAvecContexteBoutique(shopDomain, (tx) =>
+    tx.boutique.deleteMany({ where: { shopDomain } }),
+  );
+  return resultat.count;
+}

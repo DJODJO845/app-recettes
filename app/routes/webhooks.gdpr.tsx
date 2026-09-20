@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs } from "react-router";
 import { authenticate, unauthenticated } from "../shopify.server";
-import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
+import { obtenirOuCreerBoutique, supprimerBoutique } from "../lib/db/boutique.server";
 import { envoyerEmail } from "../lib/email/resend.server";
 import { depotPrisma } from "../lib/webhooks/gdprPrisma.server";
 import type { LigneLivreDesRecettes } from "../lib/domain/types";
@@ -54,8 +54,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       break;
     }
     case "SHOP_REDACT": {
-      const compte = await traiterEffacementBoutique(depotPrisma, shop);
-      console.log(`shop/redact pour ${shop} : ${compte} ligne(s) supprimée(s).`);
+      // Ordre important : les lignes du livre d'abord (elles référencent Boutique
+      // par clé étrangère, sans suppression en cascade), la fiche Boutique ensuite —
+      // sinon la suppression de Boutique échouerait tant que des lignes existent.
+      const compteLignes = await traiterEffacementBoutique(depotPrisma, shop);
+      const compteBoutique = await supprimerBoutique(shop);
+      console.log(
+        `shop/redact pour ${shop} : ${compteLignes} ligne(s) supprimée(s), fiche boutique ${compteBoutique > 0 ? "supprimée" : "déjà absente"}.`,
+      );
       break;
     }
   }
