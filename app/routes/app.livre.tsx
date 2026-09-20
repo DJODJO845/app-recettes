@@ -142,11 +142,14 @@ export default function LivreDesRecettes() {
                   ? `Période affichée : ${periodeAffichee.label}.`
                   : null}
             </s-text>
-            {afficheTout ? (
-              <s-link href="/app/livre">Revenir à la période en cours</s-link>
-            ) : (
-              <s-link href="/app/livre?tout=1">Voir tout l&apos;historique</s-link>
-            )}
+            <s-stack direction="inline" gap="base">
+              {(afficheTout || searchParams.get("debut")) && (
+                <s-link href="/app/livre">Revenir à la période en cours</s-link>
+              )}
+              {!afficheTout && (
+                <s-link href="/app/livre?tout=1">Voir tout l&apos;historique</s-link>
+              )}
+            </s-stack>
           </s-stack>
         </s-stack>
       </s-section>
