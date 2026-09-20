@@ -9,64 +9,29 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 /**
- * L'app tourne dans l'iframe imbriqué de Shopify. Les techniques basées sur
- * une navigation (iframe caché, window.top.location) sont bloquées
- * silencieusement par le navigateur dans ce contexte : les logs serveur
- * confirment des réponses 200 en quelques ms à chaque tentative, donc le
- * problème n'a jamais été côté serveur — c'est la navigation imbriquée qui
- * échoue à se traduire en téléchargement ou en page visible.
+ * L'app tourne dans l'iframe imbriqué de Shopify. Les logs serveur montrent
+ * des réponses 200 systématiques en moins d'une seconde à chaque tentative
+ * (iframe caché, window.top.location, puis fetch+blob) : le serveur n'a
+ * jamais été le problème. La vraie cause est une politique de sécurité de
+ * Chrome qui bloque silencieusement (sans erreur) tout téléchargement dont
+ * le contexte de navigation d'origine est un iframe cross-origin — exactement
+ * notre cas, puisque Shopify embarque l'app dans son propre iframe. Cette
+ * politique s'applique même à un blob créé en JS et cliqué via <a download>,
+ * tant que ce code s'exécute dans l'iframe.
  *
- * On utilise donc `fetch()` (même contexte authentifié que le reste de
- * l'app, qui fonctionne déjà pour le Dashboard/Livre) pour récupérer le
- * contenu en JS, puis on le remet au navigateur via un blob téléchargeable
- * ou un onglet pré-ouvert — sans jamais dépendre d'une navigation d'iframe.
+ * La seule sortie fiable : ouvrir un tout nouvel onglet de plus haut niveau
+ * (`window.open`, appelé de façon synchrone dans le clic pour ne pas être
+ * bloqué comme pop-up) qui fait sa propre requête HTTP normale — un contexte
+ * qui n'est plus du tout imbriqué dans un iframe, donc plus soumis à cette
+ * restriction. Le navigateur y gère nativement le Content-Disposition
+ * (téléchargement direct du CSV) et l'affichage HTML (version imprimable).
  */
-async function telechargerViaBlob(url: string, nomFichier: string) {
-  const reponse = await fetch(url, { credentials: "same-origin" });
-  if (!reponse.ok) throw new Error(`Échec du téléchargement (${reponse.status})`);
-  const blob = await reponse.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  const lien = document.createElement("a");
-  lien.href = blobUrl;
-  lien.download = nomFichier;
-  document.body.appendChild(lien);
-  lien.click();
-  lien.remove();
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-}
-
 function exporterCSV() {
-  telechargerViaBlob("/app/export/csv", "livre-des-recettes.csv").catch((erreur) => {
-    console.error(erreur);
-    alert("Erreur pendant le téléchargement du CSV. Réessayez.");
-  });
+  window.open("/app/export/csv", "_blank");
 }
 
-/**
- * window.open('', '_blank') doit être appelé de façon SYNCHRONE dans le
- * gestionnaire de clic pour ne pas être bloqué par le bloqueur de pop-up
- * (un appel après un `await fetch` serait considéré comme hors du geste
- * utilisateur). On ouvre donc un onglet vide tout de suite, puis on le
- * remplit une fois le contenu récupéré.
- */
 function exporterPDF() {
-  const fenetre = window.open("", "_blank");
-  fetch("/app/export/imprimer", { credentials: "same-origin" })
-    .then(async (reponse) => {
-      if (!reponse.ok) throw new Error(`Échec (${reponse.status})`);
-      const html = await reponse.text();
-      if (!fenetre) throw new Error("pop-up bloquée");
-      fenetre.document.open();
-      fenetre.document.write(html);
-      fenetre.document.close();
-    })
-    .catch((erreur) => {
-      console.error(erreur);
-      fenetre?.close();
-      alert(
-        "Erreur pendant l'ouverture de la version imprimable. Vérifiez que les pop-ups sont autorisées pour ce site, puis réessayez.",
-      );
-    });
+  window.open("/app/export/imprimer", "_blank");
 }
 
 export default function Export() {
