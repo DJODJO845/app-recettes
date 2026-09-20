@@ -7,6 +7,7 @@ import { authenticate } from "../shopify.server";
 import { obtenirOuCreerBoutique, mettreAJourReglages } from "../lib/db/boutique.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
+import { CercleIcone } from "../lib/ui/CercleIcone";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -44,6 +45,14 @@ export default function Reglages() {
         <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
           <fetcher.Form method="post">
             <s-stack direction="block" gap="base">
+              <s-stack direction="inline" gap="small-300" alignItems="center">
+                <CercleIcone type="business-entity" tone="info" fond="#E1F0FA" />
+                <s-text color="subdued">
+                  Ces réglages déterminent le plafond annuel applicable et le rythme de vos
+                  échéances URSSAF.
+                </s-text>
+              </s-stack>
+
               <s-select name="typeActivite" label="Type d'activité" icon="business-entity">
                 <s-option value="COMMERCE" defaultSelected={boutique.typeActivite === "COMMERCE"}>
                   Commerce

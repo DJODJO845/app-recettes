@@ -4,6 +4,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
+import { CercleIcone } from "../lib/ui/CercleIcone";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -68,33 +69,6 @@ function exporterPDF(shopify: ReturnType<typeof useAppBridge>, shop: string, hos
       console.error(erreur);
       shopify.toast.show(`Erreur PDF : ${String(erreur?.message ?? erreur)}`, { isError: true, duration: 8000 });
     });
-}
-
-function CercleIcone({
-  type,
-  tone,
-  fond,
-}: {
-  type: "export" | "print";
-  tone: "success" | "info";
-  fond: string;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "40px",
-        height: "40px",
-        borderRadius: "50%",
-        background: fond,
-        flexShrink: 0,
-      }}
-    >
-      <s-icon type={type} tone={tone} />
-    </div>
-  );
 }
 
 export default function Export() {

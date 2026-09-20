@@ -10,6 +10,7 @@ import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.serv
 import { plafondAnnuel, type NiveauAlertePlafond } from "../lib/domain/reglementation";
 import { BanniereExport } from "../lib/ui/BanniereExport";
 import { MentionLegale } from "../lib/ui/MentionLegale";
+import { CercleIcone } from "../lib/ui/CercleIcone";
 
 const NOMBRE_DERNIERES_RECETTES = 5;
 
@@ -29,33 +30,6 @@ const TEINTE_ALERTE: Record<NiveauAlertePlafond, string> = {
   avertissement: "#FCF1D8",
   critique: "#FBEAE5",
 };
-
-function CercleIcone({
-  type,
-  tone,
-  fond,
-}: {
-  type: string;
-  tone: "success" | "warning" | "critical";
-  fond: string;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "40px",
-        height: "40px",
-        borderRadius: "50%",
-        background: fond,
-        flexShrink: 0,
-      }}
-    >
-      <s-icon type={type as "cash-euro" | "gauge"} tone={tone} />
-    </div>
-  );
-}
 
 const BADGE_ALERTE = {
   ok: { tone: "success", label: "OK", icone: "check-circle-filled" },
