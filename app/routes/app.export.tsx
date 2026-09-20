@@ -17,8 +17,18 @@ export default function Export() {
           48h après une désinstallation.
         </s-paragraph>
         <s-stack direction="inline" gap="base">
-          <s-button href="/app/export/csv">Export CSV</s-button>
-          <s-button href="/app/export/imprimer">Version imprimable (PDF)</s-button>
+          {/*
+            target="_top" force une vraie navigation de page (hors du routeur
+            React Router côté client) : sans ça, le lien était intercepté et
+            transformé en appel `/app/export/csv.data`, qui ne renvoie jamais
+            le fichier lui-même.
+          */}
+          <s-button href="/app/export/csv" target="_top">
+            Export CSV
+          </s-button>
+          <s-button href="/app/export/imprimer" target="_top">
+            Version imprimable (PDF)
+          </s-button>
         </s-stack>
         <s-paragraph>
           <s-text color="subdued">
