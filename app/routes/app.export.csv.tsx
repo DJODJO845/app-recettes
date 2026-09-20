@@ -12,6 +12,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="livre-des-recettes.csv"`,
+      "Cache-Control": "no-store",
     },
   });
 };
