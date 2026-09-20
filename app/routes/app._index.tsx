@@ -5,10 +5,13 @@ import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 import { authenticate } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import { calculerTotauxDashboard } from "../lib/db/totaux.server";
+import { listerDernieresLignes } from "../lib/db/lignesLivre.server";
 import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.server";
 import { plafondAnnuel, type NiveauAlertePlafond } from "../lib/domain/reglementation";
 import { BanniereExport } from "../lib/ui/BanniereExport";
 import { MentionLegale } from "../lib/ui/MentionLegale";
+
+const NOMBRE_DERNIERES_RECETTES = 5;
 
 const COULEUR_ALERTE: Record<NiveauAlertePlafond, string> = {
   ok: "#008060",
@@ -88,13 +91,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const plafond = plafondAnnuel(boutique.typeActivite.toLowerCase() as "commerce" | "services" | "mixte");
   const pourcentagePlafond = Math.min(100, Math.round((totaux.caAnnuelEncaisse / plafond) * 100));
 
-  return { totaux, plafond, pourcentagePlafond };
+  const dernieresLignes = await listerDernieresLignes(session.shop, NOMBRE_DERNIERES_RECETTES);
+
+  return { totaux, plafond, pourcentagePlafond, dernieresLignes };
 };
 
 const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
 export default function Dashboard() {
-  const { totaux, plafond, pourcentagePlafond } = useLoaderData<typeof loader>();
+  const { totaux, plafond, pourcentagePlafond, dernieresLignes } = useLoaderData<typeof loader>();
   const badge = BADGE_ALERTE[totaux.niveauAlerte];
 
   return (
@@ -181,6 +187,37 @@ export default function Dashboard() {
             </s-banner>
           )}
         </s-stack>
+      </s-section>
+
+      <s-section heading="Dernières recettes">
+        {dernieresLignes.length === 0 ? (
+          <s-box padding="large" background="subdued" borderRadius="large">
+            <s-stack direction="block" gap="small-200" alignItems="center">
+              <s-icon type="receipt" tone="neutral" />
+              <s-text color="subdued">Aucune recette pour le moment.</s-text>
+            </s-stack>
+          </s-box>
+        ) : (
+          <s-stack direction="block" gap="base">
+            <s-stack direction="block" gap="small-300">
+              {dernieresLignes.map((ligne, index) => (
+                <s-stack key={ligne.id} direction="block" gap="small-300">
+                  <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                    <s-stack direction="block" gap="small-100">
+                      <s-text type="strong">{ligne.reference}</s-text>
+                      <s-text color="subdued">{formateurDate.format(new Date(ligne.date))}</s-text>
+                    </s-stack>
+                    <s-text tone={ligne.montant < 0 ? "critical" : "success"} type="strong">
+                      {formateurEUR.format(ligne.montant)}
+                    </s-text>
+                  </s-stack>
+                  {index < dernieresLignes.length - 1 && <s-divider />}
+                </s-stack>
+              ))}
+            </s-stack>
+            <s-link href="/app/livre">Voir tout le livre des recettes →</s-link>
+          </s-stack>
+        )}
       </s-section>
 
       <MentionLegale />

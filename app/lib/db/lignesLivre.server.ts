@@ -1,4 +1,4 @@
-import type { NatureLigne } from "@prisma/client";
+import type { LigneLivre, NatureLigne } from "@prisma/client";
 import type { LigneLivreDesRecettes, NatureLigneLivre } from "../domain/types";
 import { executerAvecContexteBoutique } from "./rls.server";
 
@@ -50,6 +50,22 @@ export async function enregistrerLignes(
   return resultat.count;
 }
 
+function versLigneLivreDesRecettes(ligne: LigneLivre): LigneLivreDesRecettes {
+  return {
+    id: ligne.transactionId,
+    date: ligne.dateEncaissement.toISOString(),
+    reference: ligne.reference,
+    client: ligne.client,
+    clientId: ligne.clientId ?? undefined,
+    nature: NATURE_DEPUIS_PRISMA[ligne.nature],
+    montant: Number(ligne.montant),
+    modeReglement: ligne.modeReglement,
+    canal: ligne.canal,
+    compteDansCA: ligne.compteDansCA,
+    avertissement: ligne.avertissement ?? undefined,
+  };
+}
+
 export async function listerLignes(
   shopDomain: string,
   periode?: { debut: Date; fin: Date },
@@ -64,19 +80,20 @@ export async function listerLignes(
     }),
   );
 
-  return lignes.map((ligne) => ({
-    id: ligne.transactionId,
-    date: ligne.dateEncaissement.toISOString(),
-    reference: ligne.reference,
-    client: ligne.client,
-    clientId: ligne.clientId ?? undefined,
-    nature: NATURE_DEPUIS_PRISMA[ligne.nature],
-    montant: Number(ligne.montant),
-    modeReglement: ligne.modeReglement,
-    canal: ligne.canal,
-    compteDansCA: ligne.compteDansCA,
-    avertissement: ligne.avertissement ?? undefined,
-  }));
+  return lignes.map(versLigneLivreDesRecettes);
+}
+
+/** Les N lignes les plus récentes, pour l'aperçu du Dashboard. */
+export async function listerDernieresLignes(shopDomain: string, limite: number): Promise<LigneLivreDesRecettes[]> {
+  const lignes = await executerAvecContexteBoutique(shopDomain, (tx) =>
+    tx.ligneLivre.findMany({
+      where: { shopDomain },
+      orderBy: { dateEncaissement: "desc" },
+      take: limite,
+    }),
+  );
+
+  return lignes.map(versLigneLivreDesRecettes);
 }
 
 /** Utilisé par le webhook `customers/data_request` : retrouve les lignes d'un client par son identifiant Shopify. */

@@ -1,11 +1,19 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useSearchParams } from "react-router";
-import { useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { authenticate } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import type { NatureLigneLivre } from "../lib/domain/types";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
+
+const NATURE_FILTRES: { value: "TOUTES" | NatureLigneLivre; label: string }[] = [
+  { value: "TOUTES", label: "Toutes" },
+  { value: "vente", label: "Vente" },
+  { value: "vente_carte_cadeau", label: "Vente de carte cadeau" },
+  { value: "reglement_carte_cadeau", label: "Règlement par carte cadeau" },
+  { value: "remboursement", label: "Remboursement" },
+];
 
 const LIBELLES_NATURE: Record<NatureLigneLivre, string> = {
   vente: "Vente",
@@ -47,31 +55,84 @@ export default function LivreDesRecettes() {
   const debutRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finRef = useRef<any>(null);
+  const [natureFiltre, setNatureFiltre] = useState<"TOUTES" | NatureLigneLivre>("TOUTES");
+  const [modeFiltre, setModeFiltre] = useState<string>("TOUS");
+
+  const modesDisponibles = useMemo(
+    () => Array.from(new Set(lignes.map((ligne) => ligne.modeReglement))).sort(),
+    [lignes],
+  );
+
+  const lignesFiltrees = useMemo(
+    () =>
+      lignes.filter(
+        (ligne) =>
+          (natureFiltre === "TOUTES" || ligne.nature === natureFiltre) &&
+          (modeFiltre === "TOUS" || ligne.modeReglement === modeFiltre),
+      ),
+    [lignes, natureFiltre, modeFiltre],
+  );
+
+  const total = useMemo(
+    () => lignesFiltrees.reduce((somme, ligne) => somme + ligne.montant, 0),
+    [lignesFiltrees],
+  );
 
   return (
     <s-page heading="Livre des recettes">
       <s-section heading="Filtrer par période">
-        <s-stack direction="inline" gap="base">
-          <s-date-field ref={debutRef} label="Du" defaultValue={searchParams.get("debut") ?? ""} />
-          <s-date-field ref={finRef} label="Au" defaultValue={searchParams.get("fin") ?? ""} />
-          <s-button
-            onClick={() => {
-              const debut = debutRef.current?.value ?? "";
-              const fin = finRef.current?.value ?? "";
-              if (debut && fin) setSearchParams({ debut, fin });
-            }}
-          >
-            Filtrer
-          </s-button>
+        <s-stack direction="block" gap="base">
+          <s-stack direction="inline" gap="base">
+            <s-date-field ref={debutRef} label="Du" defaultValue={searchParams.get("debut") ?? ""} />
+            <s-date-field ref={finRef} label="Au" defaultValue={searchParams.get("fin") ?? ""} />
+          </s-stack>
+          <s-stack direction="inline" gap="base">
+            <s-select
+              label="Nature"
+              onChange={(e) => setNatureFiltre(e.currentTarget.value as "TOUTES" | NatureLigneLivre)}
+            >
+              {NATURE_FILTRES.map((option) => (
+                <s-option key={option.value} value={option.value}>
+                  {option.label}
+                </s-option>
+              ))}
+            </s-select>
+            <s-select label="Mode de règlement" onChange={(e) => setModeFiltre(e.currentTarget.value)}>
+              <s-option value="TOUS">Tous</s-option>
+              {modesDisponibles.map((mode) => (
+                <s-option key={mode} value={mode}>
+                  {mode}
+                </s-option>
+              ))}
+            </s-select>
+          </s-stack>
+          <div>
+            <s-button
+              onClick={() => {
+                const debut = debutRef.current?.value ?? "";
+                const fin = finRef.current?.value ?? "";
+                if (debut && fin) setSearchParams({ debut, fin });
+              }}
+            >
+              Filtrer par période
+            </s-button>
+          </div>
         </s-stack>
       </s-section>
 
-      <s-section heading={`${lignes.length} ligne(s)`}>
-        {lignes.length === 0 ? (
+      <s-section>
+        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+          <s-text type="strong">{lignesFiltrees.length} ligne(s)</s-text>
+          <s-text type="strong" tone="success">Total : {formateurEUR.format(total)}</s-text>
+        </s-stack>
+      </s-section>
+
+      <s-section>
+        {lignesFiltrees.length === 0 ? (
           <s-box padding="large" background="subdued" borderRadius="large">
             <s-stack direction="block" gap="small-200" alignItems="center">
               <s-icon type="book-open" tone="neutral" />
-              <s-text color="subdued">Aucune ligne sur cette période.</s-text>
+              <s-text color="subdued">Aucune ligne ne correspond à ces filtres.</s-text>
             </s-stack>
           </s-box>
         ) : (
@@ -86,7 +147,7 @@ export default function LivreDesRecettes() {
               <s-table-header format="currency">Montant</s-table-header>
             </s-table-header-row>
             <s-table-body>
-              {lignes.map((ligne) => (
+              {lignesFiltrees.map((ligne) => (
                 <s-table-row key={ligne.id}>
                   <s-table-cell>{formateurDate.format(new Date(ligne.date))}</s-table-cell>
                   <s-table-cell>{ligne.reference}</s-table-cell>
