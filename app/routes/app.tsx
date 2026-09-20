@@ -30,7 +30,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       billing.request({
         plan: FORFAIT_MENSUEL,
         isTest: !facturationReelle,
-        returnUrl: `${process.env.SHOPIFY_APP_URL}/app`,
+        // Calculé depuis la requête elle-même plutôt que depuis
+        // SHOPIFY_APP_URL : si cette variable est absente ou mal configurée
+        // sur l'hébergeur, Shopify reçoit une returnUrl invalide et affiche
+        // une erreur générique sur la page d'approbation de l'abonnement.
+        returnUrl: `${new URL(request.url).origin}/app`,
       }),
   });
 
