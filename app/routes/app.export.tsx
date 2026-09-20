@@ -76,22 +76,47 @@ export default function Export() {
 
   return (
     <s-page heading="Export">
-      <s-section heading="Exporter votre livre des recettes">
+      <s-banner tone="info">
         <s-paragraph>
           À conserver 10 ans de votre côté : Shopify supprime les données de l&apos;app
           48h après une désinstallation.
         </s-paragraph>
-        <s-stack direction="inline" gap="base">
-          <s-button onClick={() => exporterCSV(shopify, shop, host)}>Export CSV</s-button>
-          <s-button onClick={() => exporterPDF(shopify, shop, host)}>Version imprimable (PDF)</s-button>
-        </s-stack>
-        <s-paragraph>
-          <s-text color="subdued">
-            Pour le PDF : la version imprimable s&apos;ouvre dans un nouvel onglet —
-            utilisez « Imprimer → Enregistrer au format PDF », puis fermez l&apos;onglet
-            pour revenir à l&apos;app.
-          </s-text>
-        </s-paragraph>
+      </s-banner>
+
+      <s-section heading="Exporter votre livre des recettes">
+        <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+          <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
+            <s-stack direction="block" gap="base">
+              <s-stack direction="inline" gap="small-200" alignItems="center">
+                <s-icon type="export" tone="success" />
+                <s-text type="strong">Export CSV</s-text>
+              </s-stack>
+              <s-text color="subdued">
+                Toutes les lignes du livre, au format tableur — pour votre
+                comptable ou votre propre archivage.
+              </s-text>
+              <s-button onClick={() => exporterCSV(shopify, shop, host)} icon="export">
+                Télécharger le CSV
+              </s-button>
+            </s-stack>
+          </s-box>
+
+          <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
+            <s-stack direction="block" gap="base">
+              <s-stack direction="inline" gap="small-200" alignItems="center">
+                <s-icon type="print" tone="success" />
+                <s-text type="strong">Version imprimable</s-text>
+              </s-stack>
+              <s-text color="subdued">
+                S&apos;ouvre dans un nouvel onglet, prête à imprimer ou à
+                enregistrer en PDF.
+              </s-text>
+              <s-button onClick={() => exporterPDF(shopify, shop, host)} icon="print">
+                Ouvrir la version imprimable
+              </s-button>
+            </s-stack>
+          </s-box>
+        </s-grid>
       </s-section>
 
       <MentionLegale />

@@ -14,6 +14,13 @@ const LIBELLES_NATURE: Record<NatureLigneLivre, string> = {
   remboursement: "Remboursement",
 };
 
+const BADGE_NATURE = {
+  vente: { tone: "success", icon: "check-circle-filled" },
+  vente_carte_cadeau: { tone: "info", icon: "gift-card" },
+  reglement_carte_cadeau: { tone: "info", icon: "gift-card" },
+  remboursement: { tone: "critical", icon: "arrow-left" },
+} as const satisfies Record<NatureLigneLivre, { tone: "success" | "info" | "critical"; icon: string }>;
+
 const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
 const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
@@ -59,43 +66,50 @@ export default function LivreDesRecettes() {
 
       <s-section heading={`${lignes.length} ligne(s)`}>
         {lignes.length === 0 ? (
-          <s-paragraph>Aucune ligne sur cette période.</s-paragraph>
+          <s-box padding="large" background="subdued" borderRadius="large">
+            <s-stack direction="block" gap="small-200" alignItems="center">
+              <s-icon type="book-open" tone="neutral" />
+              <s-text color="subdued">Aucune ligne sur cette période.</s-text>
+            </s-stack>
+          </s-box>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ textAlign: "left", borderBottom: "1px solid #E1E3E5" }}>
-                <th>Date</th>
-                <th>Référence</th>
-                <th>Client</th>
-                <th>Nature</th>
-                <th>Mode de règlement</th>
-                <th>Canal</th>
-                <th style={{ textAlign: "right" }}>Montant</th>
-              </tr>
-            </thead>
-            <tbody>
+          <s-table variant="list" paginate={false}>
+            <s-table-header-row>
+              <s-table-header listSlot="primary">Date</s-table-header>
+              <s-table-header>Référence</s-table-header>
+              <s-table-header>Client</s-table-header>
+              <s-table-header>Nature</s-table-header>
+              <s-table-header>Mode de règlement</s-table-header>
+              <s-table-header>Canal</s-table-header>
+              <s-table-header format="currency">Montant</s-table-header>
+            </s-table-header-row>
+            <s-table-body>
               {lignes.map((ligne) => (
-                <tr
-                  key={ligne.id}
-                  style={{
-                    borderBottom: "1px solid #F1F1F1",
-                    color: ligne.montant < 0 ? "#D82C0D" : undefined,
-                  }}
-                >
-                  <td>{formateurDate.format(new Date(ligne.date))}</td>
-                  <td>{ligne.reference}</td>
-                  <td>{ligne.client}</td>
-                  <td>
-                    {LIBELLES_NATURE[ligne.nature]}
-                    {!ligne.compteDansCA && " (déjà comptée à l'achat de la carte)"}
-                  </td>
-                  <td>{ligne.modeReglement}</td>
-                  <td>{ligne.canal}</td>
-                  <td style={{ textAlign: "right" }}>{formateurEUR.format(ligne.montant)}</td>
-                </tr>
+                <s-table-row key={ligne.id}>
+                  <s-table-cell>{formateurDate.format(new Date(ligne.date))}</s-table-cell>
+                  <s-table-cell>{ligne.reference}</s-table-cell>
+                  <s-table-cell>{ligne.client}</s-table-cell>
+                  <s-table-cell>
+                    <s-stack direction="block" gap="small-200">
+                      <s-badge tone={BADGE_NATURE[ligne.nature].tone} icon={BADGE_NATURE[ligne.nature].icon}>
+                        {LIBELLES_NATURE[ligne.nature]}
+                      </s-badge>
+                      {!ligne.compteDansCA && (
+                        <s-text color="subdued">Déjà comptée à l&apos;achat de la carte</s-text>
+                      )}
+                    </s-stack>
+                  </s-table-cell>
+                  <s-table-cell>{ligne.modeReglement}</s-table-cell>
+                  <s-table-cell>{ligne.canal}</s-table-cell>
+                  <s-table-cell>
+                    <s-text tone={ligne.montant < 0 ? "critical" : undefined} type="strong">
+                      {formateurEUR.format(ligne.montant)}
+                    </s-text>
+                  </s-table-cell>
+                </s-table-row>
               ))}
-            </tbody>
-          </table>
+            </s-table-body>
+          </s-table>
         )}
       </s-section>
 

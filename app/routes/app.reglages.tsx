@@ -41,39 +41,47 @@ export default function Reglages() {
   return (
     <s-page heading="Réglages">
       <s-section heading="Votre activité">
-        <fetcher.Form method="post">
-          <s-stack direction="block" gap="base">
-            <label>
-              Type d&apos;activité
-              <select name="typeActivite" defaultValue={boutique.typeActivite}>
-                <option value="COMMERCE">Vente de marchandises (commerce)</option>
-                <option value="SERVICES">Prestations de services</option>
-                <option value="MIXTE">Mixte (commerce + services)</option>
-              </select>
-            </label>
+        <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
+          <fetcher.Form method="post">
+            <s-stack direction="block" gap="base">
+              <s-select name="typeActivite" label="Type d'activité" icon="business-entity">
+                <s-option value="COMMERCE" defaultSelected={boutique.typeActivite === "COMMERCE"}>
+                  Vente de marchandises (commerce)
+                </s-option>
+                <s-option value="SERVICES" defaultSelected={boutique.typeActivite === "SERVICES"}>
+                  Prestations de services
+                </s-option>
+                <s-option value="MIXTE" defaultSelected={boutique.typeActivite === "MIXTE"}>
+                  Mixte (commerce + services)
+                </s-option>
+              </s-select>
 
-            <label>
-              Périodicité de déclaration
-              <select name="periodicite" defaultValue={boutique.periodicite}>
-                <option value="MENSUELLE">Mensuelle</option>
-                <option value="TRIMESTRIELLE">Trimestrielle</option>
-              </select>
-            </label>
+              <s-select name="periodicite" label="Périodicité de déclaration" icon="calendar">
+                <s-option value="MENSUELLE" defaultSelected={boutique.periodicite === "MENSUELLE"}>
+                  Mensuelle
+                </s-option>
+                <s-option value="TRIMESTRIELLE" defaultSelected={boutique.periodicite === "TRIMESTRIELLE"}>
+                  Trimestrielle
+                </s-option>
+              </s-select>
 
-            <label>
-              Date de début d&apos;activité
-              <input
-                type="date"
+              <s-date-field
                 name="dateDebutActivite"
+                label="Date de début d'activité"
                 defaultValue={new Date(boutique.dateDebutActivite).toISOString().slice(0, 10)}
               />
-            </label>
 
-            <s-button type="submit" loading={fetcher.state !== "idle" ? true : undefined}>
-              Enregistrer
-            </s-button>
-          </s-stack>
-        </fetcher.Form>
+              <s-button
+                type="submit"
+                variant="primary"
+                icon="save"
+                loading={fetcher.state !== "idle" ? true : undefined}
+              >
+                Enregistrer
+              </s-button>
+            </s-stack>
+          </fetcher.Form>
+        </s-box>
       </s-section>
 
       <MentionLegale />
