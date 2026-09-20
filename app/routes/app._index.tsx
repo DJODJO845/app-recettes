@@ -168,6 +168,9 @@ export default function Dashboard() {
                 Attention, vous dépassez 95 % du plafond annuel. Rapprochez-vous d&apos;un
                 expert-comptable ou de l&apos;URSSAF rapidement.
               </s-paragraph>
+              <s-button slot="primary-action" href="https://www.autoentrepreneur.urssaf.fr" target="_blank">
+                Voir le site de l&apos;URSSAF
+              </s-button>
             </s-banner>
           )}
         </s-stack>
