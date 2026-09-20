@@ -158,8 +158,13 @@ export default function Dashboard() {
           {totaux.niveauAlerte === "avertissement" && (
             <s-banner tone="warning">
               <s-paragraph>
-                Vous approchez du plafond annuel (80 %). Pensez à anticiper la suite.
+                Vous approchez du plafond annuel (80 %). Le dépasser peut remettre
+                en cause votre régime micro-entrepreneur : anticipez avec un
+                expert-comptable si vous pensez le dépasser cette année.
               </s-paragraph>
+              <s-button slot="primary-action" href="https://www.autoentrepreneur.urssaf.fr" target="_blank">
+                Voir le site de l&apos;URSSAF
+              </s-button>
             </s-banner>
           )}
           {totaux.niveauAlerte === "critique" && (
