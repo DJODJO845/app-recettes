@@ -6,7 +6,7 @@ import type {
 } from "./types";
 
 const LIBELLES_MODE_REGLEMENT: Record<string, string> = {
-  manual: "Virement / espèces (paiement manuel)",
+  manual: "Virement ou carte bancaire (paiement manuel)",
   gift_card: "Carte cadeau",
   shopify_payments: "Carte bancaire",
   cash: "Espèces (point de vente)",
@@ -17,17 +17,32 @@ const LIBELLES_MODE_REGLEMENT: Record<string, string> = {
 };
 
 /**
+ * Anciens libellés déjà enregistrés en base par une version précédente de la table
+ * ci-dessus, à rediriger vers le libellé actuel (une ligne n'est jamais modifiée après
+ * création — voir `libelleModeReglement`). Ajouter une entrée ici à chaque fois qu'un
+ * libellé change, pour que les anciennes et les nouvelles lignes restent regroupées.
+ */
+const ANCIENS_LIBELLES_MODE_REGLEMENT: Record<string, string> = {
+  "Virement / espèces (paiement manuel)": "Virement ou carte bancaire (paiement manuel)",
+};
+
+/**
  * Traduit un identifiant de gateway Shopify (ex. "cash") ou un libellé déjà stocké
  * en base en libellé affichable. Comme une ligne du livre n'est jamais modifiée après
  * création, d'anciennes lignes peuvent contenir un identifiant brut enregistré avant
- * qu'il ne soit ajouté à `LIBELLES_MODE_REGLEMENT` (ex. "cash" avant son ajout) : cette
+ * qu'il ne soit ajouté à `LIBELLES_MODE_REGLEMENT` (ex. "cash" avant son ajout), ou un
+ * ancien libellé remplacé depuis (voir `ANCIENS_LIBELLES_MODE_REGLEMENT`) : cette
  * fonction est donc aussi appelée à l'affichage sur les valeurs déjà stockées, pour que
  * les anciennes et nouvelles lignes du même mode de règlement partagent le même libellé.
- * Un libellé déjà traduit (ex. "Carte bancaire") n'est pas une clé de la table, donc il
- * ressort inchangé : l'opération est sans effet si elle est appliquée deux fois.
+ * Un libellé déjà à jour n'est une clé d'aucune des deux tables, donc il ressort
+ * inchangé : l'opération est sans effet si elle est appliquée plusieurs fois.
  */
-export function libelleModeReglement(gateway: string): string {
-  return LIBELLES_MODE_REGLEMENT[gateway] ?? gateway;
+export function libelleModeReglement(valeurStockee: string): string {
+  return (
+    LIBELLES_MODE_REGLEMENT[valeurStockee] ??
+    ANCIENS_LIBELLES_MODE_REGLEMENT[valeurStockee] ??
+    valeurStockee
+  );
 }
 
 /**
