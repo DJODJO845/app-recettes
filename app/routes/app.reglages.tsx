@@ -19,10 +19,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const data = await request.formData();
 
+  const emailRappelBrut = String(data.get("emailRappel") ?? "").trim();
+
   await mettreAJourReglages(session.shop, {
     typeActivite: data.get("typeActivite") as "COMMERCE" | "SERVICES" | "MIXTE",
     periodicite: data.get("periodicite") as "MENSUELLE" | "TRIMESTRIELLE",
     dateDebutActivite: new Date(String(data.get("dateDebutActivite"))),
+    emailRappel: emailRappelBrut === "" ? null : emailRappelBrut,
   });
 
   return { succes: true };
@@ -78,6 +81,13 @@ export default function Reglages() {
                 name="dateDebutActivite"
                 label="Date de début d'activité"
                 defaultValue={new Date(boutique.dateDebutActivite).toISOString().slice(0, 10)}
+              />
+
+              <s-email-field
+                name="emailRappel"
+                label="Email pour le rappel de fin de période"
+                defaultValue={boutique.emailRappel ?? ""}
+                placeholder="Laisser vide pour utiliser l'email de votre compte Shopify"
               />
 
               <s-button

@@ -37,6 +37,9 @@ model Boutique {
   typeActivite       TypeActivite @default(COMMERCE)
   periodicite        Periodicite  @default(TRIMESTRIELLE)
   dateDebutActivite  DateTime
+  // Adresse pour le rappel email de fin de période (api.cron.rappels-echeance.tsx).
+  // Si absent, on utilise l'email du compte Shopify (shop.email) à la place.
+  emailRappel        String?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 

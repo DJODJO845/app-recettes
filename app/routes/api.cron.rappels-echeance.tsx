@@ -31,12 +31,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!estDue) continue;
 
     try {
-      const { admin } = await unauthenticated.admin(boutique.shopDomain);
-      const reponse = await admin.graphql(`#graphql
-        query { shop { email } }
-      `);
-      const json = (await reponse.json()) as { data?: { shop?: { email?: string | null } } };
-      const email = json.data?.shop?.email;
+      // L'email choisi dans Réglages (app.reglages.tsx) prime sur celui du compte
+      // Shopify, pour permettre d'envoyer le rappel à un comptable ou une autre boîte.
+      let email = boutique.emailRappel;
+      if (!email) {
+        const { admin } = await unauthenticated.admin(boutique.shopDomain);
+        const reponse = await admin.graphql(`#graphql
+          query { shop { email } }
+        `);
+        const json = (await reponse.json()) as { data?: { shop?: { email?: string | null } } };
+        email = json.data?.shop?.email ?? null;
+      }
       if (!email) continue;
 
       const lignes = await listerLignes(boutique.shopDomain, { debut: periode.debut, fin: periode.fin });

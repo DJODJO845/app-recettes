@@ -6,6 +6,7 @@ export interface ReglagesBoutique {
   typeActivite: TypeActivite;
   periodicite: Periodicite;
   dateDebutActivite: Date;
+  emailRappel: string | null;
 }
 
 /** Récupère les réglages de la boutique, ou les crée avec des valeurs par défaut. */
@@ -26,7 +27,7 @@ export async function obtenirOuCreerBoutique(shopDomain: string): Promise<Reglag
 
 export async function mettreAJourReglages(
   shopDomain: string,
-  reglages: Partial<Pick<ReglagesBoutique, "typeActivite" | "periodicite" | "dateDebutActivite">>,
+  reglages: Partial<Pick<ReglagesBoutique, "typeActivite" | "periodicite" | "dateDebutActivite" | "emailRappel">>,
 ): Promise<ReglagesBoutique> {
   return executerAvecContexteBoutique(shopDomain, (tx) =>
     tx.boutique.update({
