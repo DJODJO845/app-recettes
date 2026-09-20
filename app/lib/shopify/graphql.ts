@@ -19,7 +19,12 @@ export const REQUETE_COMMANDES_RECENTES = `#graphql
         id
         name
         sourceName
-        lineItems(first: 10) {
+        # 250 (le maximum autorisé par Shopify pour ce type de champ) plutôt qu'une
+        # petite valeur arbitraire : avec 10 par exemple, une commande à plus de 10
+        # articles dont la carte cadeau serait le 11e ou au-delà aurait été mal
+        # étiquetée "vente" au lieu de "vente de carte cadeau" (n'affecte que le
+        # libellé affiché, pas le CA compté — les deux comptent dans le CA encaissé).
+        lineItems(first: 250) {
           nodes {
             isGiftCard
           }
