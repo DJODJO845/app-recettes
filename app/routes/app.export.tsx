@@ -42,6 +42,20 @@ async function recupererAvecJeton(shopify: ReturnType<typeof useAppBridge>, url:
  * "le code tourne mais échoue en silence" (alert() est probablement filtré
  * dans l'iframe Shopify — le toast App Bridge, lui, est rendu par Shopify
  * Admin lui-même, donc fiable).
+ *
+ * Le CSV se téléchargeait en fait bien (toast de succès reçu), mais aucun
+ * fichier n'apparaissait : Chrome bloque silencieusement un téléchargement
+ * (clic sur <a download>) déclenché depuis un iframe cross-origin — exactement
+ * notre iframe Shopify. Le PDF, lui, restait bloqué sur "Préparation" sans
+ * jamais aboutir : ouvrir un onglet vide AVANT de récupérer le contenu fait
+ * perdre le focus à l'onglet de l'app, et les navigateurs mobiles mettent en
+ * pause les onglets en arrière-plan — le jeton App Bridge (qui dépend d'un
+ * postMessage avec Shopify Admin) ne pouvait donc jamais arriver.
+ *
+ * Fix pour les deux : tout préparer d'abord (jeton + contenu, pendant que
+ * l'onglet de l'app a le focus), puis ouvrir un SEUL nouvel onglet une fois
+ * le contenu prêt sous forme de blob — jamais de clic de téléchargement
+ * dans l'iframe, jamais d'onglet vide qui traîne pendant l'attente.
  */
 function exporterCSV(shopify: ReturnType<typeof useAppBridge>) {
   shopify.toast.show("Préparation du CSV…");
@@ -49,14 +63,9 @@ function exporterCSV(shopify: ReturnType<typeof useAppBridge>) {
     .then(async (reponse) => {
       const blob = await reponse.blob();
       const blobUrl = URL.createObjectURL(blob);
-      const lien = document.createElement("a");
-      lien.href = blobUrl;
-      lien.download = "livre-des-recettes.csv";
-      document.body.appendChild(lien);
-      lien.click();
-      lien.remove();
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      shopify.toast.show("CSV téléchargé");
+      const fenetre = window.open(blobUrl, "_blank");
+      if (!fenetre) throw new Error("pop-up bloquée par le navigateur");
+      shopify.toast.show("CSV ouvert dans un nouvel onglet");
     })
     .catch((erreur) => {
       console.error(erreur);
@@ -64,25 +73,18 @@ function exporterCSV(shopify: ReturnType<typeof useAppBridge>) {
     });
 }
 
-/**
- * window.open('', '_blank') doit être appelé de façon synchrone dans le clic
- * pour ne pas être bloqué comme pop-up ; on ouvre donc un onglet vide tout de
- * suite, puis on le remplit une fois le contenu récupéré avec le jeton.
- */
 function exporterPDF(shopify: ReturnType<typeof useAppBridge>) {
   shopify.toast.show("Préparation de la version imprimable…");
-  const fenetre = window.open("", "_blank");
   recupererAvecJeton(shopify, "/app/export/imprimer")
     .then(async (reponse) => {
       const html = await reponse.text();
+      const blob = new Blob([html], { type: "text/html" });
+      const blobUrl = URL.createObjectURL(blob);
+      const fenetre = window.open(blobUrl, "_blank");
       if (!fenetre) throw new Error("pop-up bloquée par le navigateur");
-      fenetre.document.open();
-      fenetre.document.write(html);
-      fenetre.document.close();
     })
     .catch((erreur) => {
       console.error(erreur);
-      fenetre?.close();
       shopify.toast.show(`Erreur PDF : ${String(erreur?.message ?? erreur)}`, { isError: true, duration: 8000 });
     });
 }
