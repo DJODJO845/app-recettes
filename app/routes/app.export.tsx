@@ -1,5 +1,6 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 
@@ -9,32 +10,72 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 /**
- * L'app tourne dans l'iframe imbriqué de Shopify. Les logs serveur montrent
- * des réponses 200 systématiques en moins d'une seconde à chaque tentative
- * (iframe caché, window.top.location, puis fetch+blob) : le serveur n'a
- * jamais été le problème. La vraie cause est une politique de sécurité de
- * Chrome qui bloque silencieusement (sans erreur) tout téléchargement dont
- * le contexte de navigation d'origine est un iframe cross-origin — exactement
- * notre cas, puisque Shopify embarque l'app dans son propre iframe. Cette
- * politique s'applique même à un blob créé en JS et cliqué via <a download>,
- * tant que ce code s'exécute dans l'iframe.
+ * Cause racine (confirmée en lisant le SDK @shopify/shopify-app-react-router
+ * installé) : avec `distribution: AppDistribution.AppStore`, authenticate.admin
+ * exige un jeton de session (JWT) sur CHAQUE requête, sans repli sur le cookie
+ * — voir authenticate/admin/authenticate.mjs, `getSessionTokenContext`. Une
+ * requête document sans ce jeton passe par `ensureAppIsEmbeddedIfRequired`, qui
+ * redirige silencieusement vers Shopify (redirect-to-shopify-or-app-root.mjs) —
+ * c'est ce qui rendait iframe caché, window.top et fetch() nus systématiquement
+ * vides ou faux (redirection suivie/avalée), quel que soit le mécanisme de
+ * téléchargement essayé par-dessus.
  *
- * La seule sortie fiable : ouvrir un tout nouvel onglet de plus haut niveau
- * (`window.open`, appelé de façon synchrone dans le clic pour ne pas être
- * bloqué comme pop-up) qui fait sa propre requête HTTP normale — un contexte
- * qui n'est plus du tout imbriqué dans un iframe, donc plus soumis à cette
- * restriction. Le navigateur y gère nativement le Content-Disposition
- * (téléchargement direct du CSV) et l'affichage HTML (version imprimable).
+ * Le jeton ne peut être obtenu que depuis l'intérieur de l'iframe Shopify, via
+ * App Bridge (`shopify.idToken()`). On l'attache en header Authorization : la
+ * requête est alors traitée comme authentifiée immédiatement, sans passer par
+ * la logique d'embarquement/redirection.
  */
-function exporterCSV() {
-  window.open("/app/export/csv", "_blank");
+async function recupererAvecJeton(shopify: ReturnType<typeof useAppBridge>, url: string) {
+  const token = await shopify.idToken();
+  const reponse = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!reponse.ok) throw new Error(`Échec (${reponse.status})`);
+  return reponse;
 }
 
-function exporterPDF() {
-  window.open("/app/export/imprimer", "_blank");
+function exporterCSV(shopify: ReturnType<typeof useAppBridge>) {
+  recupererAvecJeton(shopify, "/app/export/csv")
+    .then(async (reponse) => {
+      const blob = await reponse.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const lien = document.createElement("a");
+      lien.href = blobUrl;
+      lien.download = "livre-des-recettes.csv";
+      document.body.appendChild(lien);
+      lien.click();
+      lien.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    })
+    .catch((erreur) => {
+      console.error(erreur);
+      shopify.toast.show("Erreur pendant le téléchargement du CSV", { isError: true });
+    });
+}
+
+/**
+ * window.open('', '_blank') doit être appelé de façon synchrone dans le clic
+ * pour ne pas être bloqué comme pop-up ; on ouvre donc un onglet vide tout de
+ * suite, puis on le remplit une fois le contenu récupéré avec le jeton.
+ */
+function exporterPDF(shopify: ReturnType<typeof useAppBridge>) {
+  const fenetre = window.open("", "_blank");
+  recupererAvecJeton(shopify, "/app/export/imprimer")
+    .then(async (reponse) => {
+      const html = await reponse.text();
+      if (!fenetre) throw new Error("pop-up bloquée");
+      fenetre.document.open();
+      fenetre.document.write(html);
+      fenetre.document.close();
+    })
+    .catch((erreur) => {
+      console.error(erreur);
+      fenetre?.close();
+      shopify.toast.show("Erreur pendant l'ouverture de la version imprimable", { isError: true });
+    });
 }
 
 export default function Export() {
+  const shopify = useAppBridge();
+
   return (
     <s-page heading="Export">
       <s-section heading="Exporter votre livre des recettes">
@@ -43,8 +84,8 @@ export default function Export() {
           48h après une désinstallation.
         </s-paragraph>
         <s-stack direction="inline" gap="base">
-          <s-button onClick={exporterCSV}>Export CSV</s-button>
-          <s-button onClick={exporterPDF}>Version imprimable (PDF)</s-button>
+          <s-button onClick={() => exporterCSV(shopify)}>Export CSV</s-button>
+          <s-button onClick={() => exporterPDF(shopify)}>Version imprimable (PDF)</s-button>
         </s-stack>
         <s-paragraph>
           <s-text color="subdued">
