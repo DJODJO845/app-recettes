@@ -1,5 +1,5 @@
 # Configuration Shopify app.
-name = "Livre des recettes & URSSAF"
+name = "Recettes URSSAF"
 client_id = "5e9776b61adcb708dbfc6cd1914adfdf"
 application_url = "https://app-recettes-mpyr.onrender.com"
 embedded = true
