@@ -35,12 +35,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
        navigateurs mobiles peut rendre le texte invisible (même couleur
        que le fond) sur une page qui ne déclare que des styles "clairs"
        implicites. */
-    html { background: #ffffff; color-scheme: light; }
-    body { font-family: sans-serif; margin: 2rem; background: #ffffff; color: #1a1a1a; }
+    html { background: #ffffff !important; color-scheme: light; }
+    * { color: #1a1a1a !important; background-color: transparent !important; }
+    html, body { background: #ffffff !important; }
+    body { font-family: sans-serif; margin: 2rem; }
     table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #ccc; padding: 4px 8px; text-align: left; font-size: 12px; color: #1a1a1a; }
-    h1 { font-size: 18px; color: #1a1a1a; }
-    button { background: #1a1a1a; color: #ffffff; border: none; padding: 8px 16px; border-radius: 4px; }
+    th, td { border-bottom: 1px solid #999 !important; padding: 4px 8px; text-align: left; font-size: 12px; }
+    h1 { font-size: 18px; }
+    button { background: #1a1a1a !important; color: #ffffff !important; border: none; padding: 8px 16px; border-radius: 4px; }
     @media print { button { display: none; } }
   </style>
 </head>
