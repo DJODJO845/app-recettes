@@ -7,6 +7,14 @@
  * protected customer data n'a pas été approuvé (cf. docs/phase-2-architecture.md —
  * demande à soumettre dans le Partner Dashboard, comme `read_all_orders`). En
  * attendant, le nom du client reste "Client" générique (cf. Phase 1 CONFORMITÉ).
+ *
+ * Le filtre passé en `$requete` doit porter sur `updated_at`, pas `created_at` : une
+ * commande peut être créée bien avant d'être réellement encaissée (paiement manuel
+ * confirmé des jours/semaines plus tard, remboursement traité en différé...). Avec un
+ * filtre sur `created_at`, un import incrémental (voir importerCommandes.server.ts)
+ * ne re-demande que les commandes créées récemment — une commande ancienne dont le
+ * paiement manuel vient tout juste d'être confirmé ne serait alors jamais rapatriée,
+ * et son encaissement resterait silencieusement absent du livre des recettes.
  */
 export const REQUETE_COMMANDES_RECENTES = `#graphql
   query CommandesRecentes($cursor: String, $requete: String) {

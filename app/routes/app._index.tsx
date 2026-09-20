@@ -52,13 +52,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     // Import incrémental : on ne repart de dateDebutActivite en entier que la
     // première fois (ou juste après un changement de cette date, qui remet
     // derniereImportation à null — voir mettreAJourReglages) ; sinon on ne
-    // redemande à Shopify que les commandes créées depuis le dernier import
-    // réussi, pour éviter de retélécharger tout l'historique à chaque visite.
+    // redemande à Shopify que les commandes MODIFIÉES depuis le dernier import
+    // réussi (pas seulement créées — voir importerCommandesRecentes pour pourquoi),
+    // pour éviter de retélécharger tout l'historique à chaque visite.
     const depuis = boutique.derniereImportation
       ? new Date(boutique.derniereImportation.getTime() - JOURS_MARGE_IMPORT_INCREMENTAL * 24 * 60 * 60 * 1000)
       : boutique.dateDebutActivite;
 
-    await importerCommandesRecentes(admin, session.shop, depuis);
+    await importerCommandesRecentes(admin, session.shop, depuis, boutique.dateDebutActivite);
     await enregistrerImportation(session.shop);
   } catch (erreur) {
     // On n'empêche pas l'affichage du tableau de bord si l'import échoue (ex. souci
