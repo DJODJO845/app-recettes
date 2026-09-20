@@ -2,10 +2,11 @@
  * Requête GraphQL Admin API pour récupérer les commandes récentes avec tout ce dont
  * le moteur du livre des recettes a besoin (cf. app/lib/domain/livreDesRecettes.ts).
  *
- * `transactions` est un champ simple (pas une connection paginée) sur `Order` dans
- * l'API Admin GraphQL — à revalider dans le GraphiQL intégré (`shopify app dev`) une
- * fois une vraie session disponible, cette requête n'ayant pas pu être testée contre
- * un vrai schéma depuis cet environnement de développement.
+ * Le champ `customer` est volontairement absent : Shopify rejette toute la requête
+ * (erreur "This app is not approved to access the Order object") tant que l'accès aux
+ * protected customer data n'a pas été approuvé (cf. docs/phase-2-architecture.md —
+ * demande à soumettre dans le Partner Dashboard, comme `read_all_orders`). En
+ * attendant, le nom du client reste "Client" générique (cf. Phase 1 CONFORMITÉ).
  */
 export const REQUETE_COMMANDES_RECENTES = `#graphql
   query CommandesRecentes($cursor: String, $requete: String) {
@@ -18,10 +19,6 @@ export const REQUETE_COMMANDES_RECENTES = `#graphql
         id
         name
         sourceName
-        customer {
-          id
-          displayName
-        }
         lineItems(first: 10) {
           nodes {
             isGiftCard
@@ -57,7 +54,6 @@ export interface OrderNode {
   id: string;
   name: string;
   sourceName: string | null;
-  customer: { id: string; displayName: string } | null;
   lineItems: { nodes: { isGiftCard: boolean }[] };
   transactions: OrderTransactionNode[];
 }

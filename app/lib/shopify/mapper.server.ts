@@ -19,8 +19,8 @@ export function mapperCommande(node: OrderNode): CommandeShopify {
     id: node.id,
     name: node.name,
     sourceName: node.sourceName ?? "web",
-    nomClient: node.customer?.displayName,
-    clientId: node.customer?.id,
+    // nomClient/clientId restent undefined : le champ `customer` n'est pas demandé
+    // tant que l'accès aux protected customer data n'est pas approuvé (voir graphql.ts).
     estVenteDeCarteCadeau: node.lineItems.nodes.some((li) => li.isGiftCard),
     transactions: node.transactions
       .map((t) => {
