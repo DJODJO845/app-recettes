@@ -17,18 +17,14 @@ export default function Export() {
           48h après une désinstallation.
         </s-paragraph>
         <s-stack direction="inline" gap="base">
-          <s-button href="/app/export/csv" target="_blank">
-            Export CSV
-          </s-button>
-          <s-button href="/app/export/imprimer" target="_blank">
-            Version imprimable (PDF)
-          </s-button>
+          <s-button href="/app/export/csv">Export CSV</s-button>
+          <s-button href="/app/export/imprimer">Version imprimable (PDF)</s-button>
         </s-stack>
         <s-paragraph>
           <s-text color="subdued">
-            Pour le PDF : la version imprimable s&apos;ouvre dans un nouvel onglet,
-            utilisez ensuite « Imprimer → Enregistrer au format PDF » de votre
-            téléphone ou navigateur.
+            Pour le PDF : utilisez ensuite « Imprimer → Enregistrer au format PDF »
+            de votre téléphone ou navigateur, puis revenez en arrière pour retrouver
+            l&apos;app.
           </s-text>
         </s-paragraph>
       </s-section>
