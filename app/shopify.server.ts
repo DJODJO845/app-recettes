@@ -2,10 +2,16 @@ import "@shopify/shopify-app-react-router/adapters/node";
 import {
   ApiVersion,
   AppDistribution,
+  BillingInterval,
   shopifyApp,
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+
+// Un seul palier : le périmètre de l'app (calcul + export du livre des
+// recettes) ne justifie pas de fonctionnalités réservées à un plan
+// supérieur — voir décision Phase 5 (9,99 €/mois, essai 7 jours).
+export const FORFAIT_MENSUEL = "Forfait mensuel";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -16,6 +22,18 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
+  billing: {
+    [FORFAIT_MENSUEL]: {
+      trialDays: 7,
+      lineItems: [
+        {
+          amount: 9.99,
+          currencyCode: "EUR",
+          interval: BillingInterval.Every30Days,
+        },
+      ],
+    },
+  },
   future: {
     expiringOfflineAccessTokens: true,
   },

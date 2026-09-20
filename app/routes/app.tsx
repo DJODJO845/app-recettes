@@ -3,12 +3,27 @@ import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
-import { authenticate } from "../shopify.server";
+import { authenticate, FORFAIT_MENSUEL } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   await obtenirOuCreerBoutique(session.shop);
+
+  // Bloque l'accès tant que l'abonnement (ou l'essai de 7 jours) n'est pas
+  // actif — billing.request() lève une redirection vers la page de
+  // confirmation Shopify, donc rien après cet appel ne s'exécute si l'essai
+  // n'a pas encore été accepté.
+  await billing.require({
+    plans: [FORFAIT_MENSUEL],
+    isTest: process.env.NODE_ENV !== "production",
+    onFailure: async () =>
+      billing.request({
+        plan: FORFAIT_MENSUEL,
+        isTest: process.env.NODE_ENV !== "production",
+        returnUrl: `${process.env.SHOPIFY_APP_URL}/app`,
+      }),
+  });
 
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
 };
