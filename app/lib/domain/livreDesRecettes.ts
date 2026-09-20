@@ -5,6 +5,14 @@ import type {
   TransactionShopify,
 } from "./types";
 
+/** Libellés français de `NatureLigneLivre`, partagés entre l'affichage (Livre), le CSV et le PDF imprimable. */
+export const LIBELLES_NATURE: Record<NatureLigneLivre, string> = {
+  vente: "Vente",
+  vente_carte_cadeau: "Vente de carte cadeau",
+  reglement_carte_cadeau: "Règlement par carte cadeau",
+  remboursement: "Remboursement",
+};
+
 const LIBELLES_MODE_REGLEMENT: Record<string, string> = {
   manual: "Virement ou carte bancaire (paiement manuel)",
   gift_card: "Carte cadeau",

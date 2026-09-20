@@ -1,11 +1,5 @@
-import type { LigneLivreDesRecettes, NatureLigneLivre } from "../domain/types";
-
-const LIBELLES_NATURE: Record<NatureLigneLivre, string> = {
-  vente: "Vente",
-  vente_carte_cadeau: "Vente de carte cadeau",
-  reglement_carte_cadeau: "Règlement par carte cadeau",
-  remboursement: "Remboursement",
-};
+import type { LigneLivreDesRecettes } from "../domain/types";
+import { LIBELLES_NATURE } from "../domain/livreDesRecettes";
 
 const EN_TETES = ["Date", "Référence", "Client", "Nature", "Mode de règlement", "Canal", "Montant"];
 

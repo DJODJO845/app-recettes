@@ -3,7 +3,7 @@ import { useLoaderData, useSearchParams } from "react-router";
 import { useMemo, useRef, useState } from "react";
 import { authenticate } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
-import { libelleModeReglement } from "../lib/domain/livreDesRecettes";
+import { libelleModeReglement, LIBELLES_NATURE } from "../lib/domain/livreDesRecettes";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import type { NatureLigneLivre } from "../lib/domain/types";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
@@ -15,13 +15,6 @@ const NATURE_FILTRES: { value: "TOUTES" | NatureLigneLivre; label: string }[] = 
   { value: "reglement_carte_cadeau", label: "Règlement par carte cadeau" },
   { value: "remboursement", label: "Remboursement" },
 ];
-
-const LIBELLES_NATURE: Record<NatureLigneLivre, string> = {
-  vente: "Vente",
-  vente_carte_cadeau: "Vente de carte cadeau",
-  reglement_carte_cadeau: "Règlement par carte cadeau",
-  remboursement: "Remboursement",
-};
 
 const BADGE_NATURE = {
   vente: { tone: "success", icon: "check-circle-filled" },
