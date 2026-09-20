@@ -9,8 +9,11 @@ const LIBELLES_MODE_REGLEMENT: Record<string, string> = {
   manual: "Virement / espèces (paiement manuel)",
   gift_card: "Carte cadeau",
   shopify_payments: "Carte bancaire",
+  cash: "Espèces (point de vente)",
+  paypal: "PayPal",
   alma: "Paiement en plusieurs fois (Alma)",
   klarna: "Paiement en plusieurs fois (Klarna)",
+  bogus: "Paiement test (boutique de démonstration)",
 };
 
 function libelleModeReglement(gateway: string): string {
