@@ -1,5 +1,6 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useSearchParams } from "react-router";
+import { useState } from "react";
 import { authenticate } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
@@ -42,25 +43,27 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function LivreDesRecettes() {
   const { lignes } = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [debut, setDebut] = useState(searchParams.get("debut") ?? "");
+  const [fin, setFin] = useState(searchParams.get("fin") ?? "");
 
   return (
     <s-page heading="Livre des recettes">
       <s-section heading="Filtrer par période">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const data = new FormData(e.currentTarget);
-            const debut = String(data.get("debut") ?? "");
-            const fin = String(data.get("fin") ?? "");
-            if (debut && fin) setSearchParams({ debut, fin });
-          }}
-        >
-          <s-stack direction="inline" gap="base">
-            <input type="date" name="debut" defaultValue={searchParams.get("debut") ?? ""} />
-            <input type="date" name="fin" defaultValue={searchParams.get("fin") ?? ""} />
-            <s-button type="submit">Filtrer</s-button>
-          </s-stack>
-        </form>
+        <s-stack direction="inline" gap="base">
+          <s-date-field
+            label="Du"
+            value={debut}
+            onChange={(e) => setDebut(e.currentTarget.value)}
+          />
+          <s-date-field
+            label="Au"
+            value={fin}
+            onChange={(e) => setFin(e.currentTarget.value)}
+          />
+          <s-button onClick={() => debut && fin && setSearchParams({ debut, fin })}>
+            Filtrer
+          </s-button>
+        </s-stack>
       </s-section>
 
       <s-section heading={`${lignes.length} ligne(s)`}>
