@@ -1,6 +1,6 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useSearchParams } from "react-router";
-import { useState } from "react";
+import { useRef } from "react";
 import { authenticate } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
@@ -43,24 +43,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function LivreDesRecettes() {
   const { lignes } = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [debut, setDebut] = useState(searchParams.get("debut") ?? "");
-  const [fin, setFin] = useState(searchParams.get("fin") ?? "");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- type du custom element non exposé pour un ref direct
+  const debutRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const finRef = useRef<any>(null);
 
   return (
     <s-page heading="Livre des recettes">
       <s-section heading="Filtrer par période">
         <s-stack direction="inline" gap="base">
-          <s-date-field
-            label="Du"
-            value={debut}
-            onChange={(e) => setDebut(e.currentTarget.value)}
-          />
-          <s-date-field
-            label="Au"
-            value={fin}
-            onChange={(e) => setFin(e.currentTarget.value)}
-          />
-          <s-button onClick={() => debut && fin && setSearchParams({ debut, fin })}>
+          <s-date-field ref={debutRef} label="Du" defaultValue={searchParams.get("debut") ?? ""} />
+          <s-date-field ref={finRef} label="Au" defaultValue={searchParams.get("fin") ?? ""} />
+          <s-button
+            onClick={() => {
+              const debut = debutRef.current?.value ?? "";
+              const fin = finRef.current?.value ?? "";
+              if (debut && fin) setSearchParams({ debut, fin });
+            }}
+          >
             Filtrer
           </s-button>
         </s-stack>
