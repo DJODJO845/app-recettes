@@ -1,5 +1,5 @@
 import type { LigneLivreDesRecettes } from "../domain/types";
-import { LIBELLES_NATURE } from "../domain/livreDesRecettes";
+import { LIBELLES_NATURE, libelleModeReglement } from "../domain/livreDesRecettes";
 
 const EN_TETES = ["Date", "Référence", "Client", "Nature", "Mode de règlement", "Canal", "Montant"];
 
@@ -23,7 +23,7 @@ export function genererCSV(lignes: LigneLivreDesRecettes[]): string {
       ligne.reference,
       ligne.client,
       LIBELLES_NATURE[ligne.nature],
-      ligne.modeReglement,
+      libelleModeReglement(ligne.modeReglement),
       ligne.canal,
       ligne.montant.toFixed(2).replace(".", ","),
     ]
