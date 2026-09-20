@@ -3,7 +3,9 @@ import { useLoaderData, useSearchParams } from "react-router";
 import { useMemo, useRef, useState } from "react";
 import { authenticate } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
+import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import { libelleModeReglement, LIBELLES_NATURE } from "../lib/domain/livreDesRecettes";
+import { periodeCourante } from "../lib/domain/periode";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import type { NatureLigneLivre } from "../lib/domain/types";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
@@ -31,19 +33,31 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const debutParam = url.searchParams.get("debut");
   const finParam = url.searchParams.get("fin");
+  const afficheTout = url.searchParams.get("tout") === "1";
 
-  const periode =
-    debutParam && finParam
-      ? { debut: new Date(debutParam), fin: new Date(`${finParam}T23:59:59`) }
-      : undefined;
+  let periode: { debut: Date; fin: Date; label: string } | undefined;
+  if (debutParam && finParam) {
+    periode = {
+      debut: new Date(debutParam),
+      fin: new Date(`${finParam}T23:59:59`),
+      label: `du ${formateurDate.format(new Date(debutParam))} au ${formateurDate.format(new Date(finParam))}`,
+    };
+  } else if (!afficheTout) {
+    // Par défaut, on limite à la période de déclaration en cours plutôt que de
+    // charger tout l'historique d'un coup (potentiellement des années de
+    // commandes) : la page reste rapide même pour une boutique active depuis
+    // longtemps. "Voir tout l'historique" reste un choix explicite.
+    const boutique = await obtenirOuCreerBoutique(session.shop);
+    periode = periodeCourante(boutique.periodicite);
+  }
 
   const lignes = await listerLignes(session.shop, periode);
 
-  return { lignes };
+  return { lignes, periodeAffichee: periode ?? null, afficheTout };
 };
 
 export default function LivreDesRecettes() {
-  const { lignes } = useLoaderData<typeof loader>();
+  const { lignes, periodeAffichee, afficheTout } = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- type du custom element non exposé pour un ref direct
   const debutRef = useRef<any>(null);
@@ -115,9 +129,25 @@ export default function LivreDesRecettes() {
       </s-section>
 
       <s-section>
-        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-          <s-text type="strong">{lignesFiltrees.length} ligne(s)</s-text>
-          <s-text type="strong" tone="success">Total : {formateurEUR.format(total)}</s-text>
+        <s-stack direction="block" gap="small-200">
+          <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+            <s-text type="strong">{lignesFiltrees.length} ligne(s)</s-text>
+            <s-text type="strong" tone="success">Total : {formateurEUR.format(total)}</s-text>
+          </s-stack>
+          <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+            <s-text color="subdued">
+              {afficheTout
+                ? "Tout l'historique affiché."
+                : periodeAffichee
+                  ? `Période affichée : ${periodeAffichee.label}.`
+                  : null}
+            </s-text>
+            {afficheTout ? (
+              <s-link href="/app/livre">Revenir à la période en cours</s-link>
+            ) : (
+              <s-link href="/app/livre?tout=1">Voir tout l&apos;historique</s-link>
+            )}
+          </s-stack>
         </s-stack>
       </s-section>
 
