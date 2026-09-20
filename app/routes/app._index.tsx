@@ -11,6 +11,7 @@ import { plafondAnnuel, type NiveauAlertePlafond } from "../lib/domain/reglement
 import { BanniereExport } from "../lib/ui/BanniereExport";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { CercleIcone } from "../lib/ui/CercleIcone";
+import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
 
 const NOMBRE_DERNIERES_RECETTES = 5;
 const NOMBRE_MOIS_EVOLUTION = 6;
@@ -101,9 +102,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     typeActivite: boutique.typeActivite,
   };
 };
-
-const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
-const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
 export default function Dashboard() {
   const {

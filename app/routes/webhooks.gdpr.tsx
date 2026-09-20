@@ -4,6 +4,7 @@ import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import { envoyerEmail } from "../lib/email/resend.server";
 import { depotPrisma } from "../lib/webhooks/gdprPrisma.server";
 import type { LigneLivreDesRecettes } from "../lib/domain/types";
+import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
 import {
   traiterDemandeDonneesClient,
   traiterEffacementBoutique,
@@ -13,9 +14,6 @@ import {
 interface PayloadClient {
   customer?: { id?: number };
 }
-
-const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
-const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
 /**
  * Les 3 webhooks RGPD obligatoires (compliance_topics dans shopify.app.toml) arrivent

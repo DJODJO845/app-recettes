@@ -9,6 +9,7 @@ import { periodeCourante } from "../lib/domain/periode";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import type { NatureLigneLivre } from "../lib/domain/types";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
+import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
 
 // Dérivé de LIBELLES_NATURE (pas redéfini en dur ici) pour ne jamais pouvoir dériver
 // de la traduction utilisée ailleurs dans l'app — même souci déjà rencontré et
@@ -27,9 +28,6 @@ const BADGE_NATURE = {
   reglement_carte_cadeau: { tone: "info", icon: "gift-card" },
   remboursement: { tone: "critical", icon: "arrow-left" },
 } as const satisfies Record<NatureLigneLivre, { tone: "success" | "info" | "critical"; icon: string }>;
-
-const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
-const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);

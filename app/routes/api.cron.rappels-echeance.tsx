@@ -5,8 +5,7 @@ import { calculerCAPeriode } from "../lib/domain/livreDesRecettes";
 import { periodeVientDeSeTerminer } from "../lib/domain/periode";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { envoyerEmail } from "../lib/email/resend.server";
-
-const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+import { formateurEUR } from "../lib/ui/formateurs";
 
 /**
  * Appelée une fois par jour par un déclencheur externe (workflow GitHub Actions —

@@ -3,9 +3,7 @@ import { authenticate } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { enregistrerExportation } from "../lib/db/boutique.server";
 import { LIBELLES_NATURE, libelleModeReglement } from "../lib/domain/livreDesRecettes";
-
-const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
-const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
+import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
