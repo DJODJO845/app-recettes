@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { authenticate, FORFAIT_MENSUEL } from "../shopify.server";
 import { obtenirOuCreerBoutique, mettreAJourReglages } from "../lib/db/boutique.server";
+import { plafondAnnuel } from "../lib/domain/reglementation";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 import { CercleIcone } from "../lib/ui/CercleIcone";
@@ -19,7 +20,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { appSubscriptions } = await billing.check({ plans: [FORFAIT_MENSUEL] });
   const abonnement = appSubscriptions[0] ?? null;
 
-  return { boutique, abonnement };
+  // Toujours lus depuis config/reglementation.json (jamais codés en dur, cf.
+  // reglementation.ts), pour afficher les vrais plafonds dans l'aide du champ.
+  const plafonds = { commerce: plafondAnnuel("commerce"), services: plafondAnnuel("services") };
+
+  return { boutique, abonnement, plafonds };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -39,9 +44,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
+const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 export default function Reglages() {
-  const { boutique, abonnement } = useLoaderData<typeof loader>();
+  const { boutique, abonnement, plafonds } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
 
@@ -79,7 +85,12 @@ export default function Reglages() {
                 </s-text>
               </s-stack>
 
-              <s-select name="typeActivite" label="Type d'activité" icon="business-entity">
+              <s-select
+                name="typeActivite"
+                label="Type d'activité"
+                icon="business-entity"
+                details={`Commerce : vente de marchandises (plafond ${formateurEUR.format(plafonds.commerce)}). Services : prestations (plafond ${formateurEUR.format(plafonds.services)}). Mixte : les deux, avec un plafond global de ${formateurEUR.format(plafonds.commerce)} dont ${formateurEUR.format(plafonds.services)} max de services.`}
+              >
                 <s-option value="COMMERCE" defaultSelected={boutique.typeActivite === "COMMERCE"}>
                   Commerce
                 </s-option>
