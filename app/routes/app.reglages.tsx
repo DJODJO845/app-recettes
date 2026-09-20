@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { authenticate, FORFAIT_MENSUEL } from "../shopify.server";
 import { obtenirOuCreerBoutique, mettreAJourReglages } from "../lib/db/boutique.server";
 import { plafondAnnuel } from "../lib/domain/reglementation";
+import { dateISOParis, debutDeJourParis, parseDateISO } from "../lib/domain/fuseauParis";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 import { CercleIcone } from "../lib/ui/CercleIcone";
@@ -36,14 +37,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   await mettreAJourReglages(session.shop, {
     typeActivite: data.get("typeActivite") as "COMMERCE" | "SERVICES" | "MIXTE",
     periodicite: data.get("periodicite") as "MENSUELLE" | "TRIMESTRIELLE",
-    dateDebutActivite: new Date(String(data.get("dateDebutActivite"))),
+    // Interprété en heure de Paris (pas UTC, cf. lib/domain/fuseauParis.ts) : le
+    // marchand choisit une date calendaire française, pas un instant UTC.
+    dateDebutActivite: debutDeJourParis(...parseDateISO(String(data.get("dateDebutActivite")))),
     emailRappel: emailRappelBrut === "" ? null : emailRappelBrut,
   });
 
   return { succes: true };
 };
 
-const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
+const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Europe/Paris" });
 const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 export default function Reglages() {
@@ -115,7 +118,7 @@ export default function Reglages() {
                 name="dateDebutActivite"
                 label="Date de début d'activité"
                 details="Détermine depuis quand l'app va chercher vos commandes Shopify. La reculer permet de récupérer un historique plus ancien (dans la limite de ce que Shopify autorise)."
-                defaultValue={new Date(boutique.dateDebutActivite).toISOString().slice(0, 10)}
+                defaultValue={dateISOParis(new Date(boutique.dateDebutActivite))}
               />
 
               <s-email-field

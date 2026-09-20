@@ -6,6 +6,7 @@ import { listerLignes } from "../lib/db/lignesLivre.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import { libelleModeReglement, LIBELLES_NATURE } from "../lib/domain/livreDesRecettes";
 import { periodeCourante } from "../lib/domain/periode";
+import { debutDeJourParis, finDeJourParis, parseDateISO } from "../lib/domain/fuseauParis";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import type { NatureLigneLivre } from "../lib/domain/types";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
@@ -38,10 +39,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   let periode: { debut: Date; fin: Date; label: string } | undefined;
   if (debutParam && finParam) {
+    // Interprétés en heure de Paris (pas UTC ni heure du serveur, cf.
+    // lib/domain/fuseauParis.ts) : le marchand choisit des dates calendaires
+    // françaises dans le sélecteur, pas des instants UTC.
+    const debut = debutDeJourParis(...parseDateISO(debutParam));
+    const fin = finDeJourParis(...parseDateISO(finParam));
     periode = {
-      debut: new Date(debutParam),
-      fin: new Date(`${finParam}T23:59:59`),
-      label: `du ${formateurDate.format(new Date(debutParam))} au ${formateurDate.format(new Date(finParam))}`,
+      debut,
+      fin,
+      label: `du ${formateurDate.format(debut)} au ${formateurDate.format(fin)}`,
     };
   } else if (!afficheTout) {
     // Par défaut, on limite à la période de déclaration en cours plutôt que de

@@ -3,6 +3,13 @@ import { LIBELLES_NATURE, libelleModeReglement } from "../domain/livreDesRecette
 
 const EN_TETES = ["Date", "Référence", "Client", "Nature", "Mode de règlement", "Canal", "Montant"];
 
+// Format numérique (JJ/MM/AAAA), pas le format texte de lib/ui/formateurs.ts : un
+// tableur (Excel, Google Sheets) reconnaît et trie ce format automatiquement comme
+// une date, contrairement à "20 sept. 2026". timeZone explicite pour la même raison
+// que partout ailleurs (cf. lib/domain/fuseauParis.ts) : sans ça, une vente encaissée
+// juste après minuit heure de Paris s'exporterait avec la date de la veille.
+const formateurDateCSV = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris" });
+
 function echapperChampCSV(valeur: string): string {
   if (/[;"\n]/.test(valeur)) {
     return `"${valeur.replace(/"/g, '""')}"`;
@@ -19,7 +26,7 @@ export function genererCSV(lignes: LigneLivreDesRecettes[]): string {
   const entetes = EN_TETES.join(";");
   const corps = lignes.map((ligne) =>
     [
-      new Date(ligne.date).toLocaleDateString("fr-FR"),
+      formateurDateCSV.format(new Date(ligne.date)),
       ligne.reference,
       ligne.client,
       LIBELLES_NATURE[ligne.nature],

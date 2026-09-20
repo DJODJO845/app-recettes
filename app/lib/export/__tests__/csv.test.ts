@@ -30,4 +30,14 @@ describe("genererCSV", () => {
 
     expect(csv).toContain('"Dupont; ""Jean"""');
   });
+
+  it("affiche la date en heure de Paris, pas en UTC (une vente juste après minuit heure de Paris ne doit pas apparaître à la date de la veille)", () => {
+    // 23h30 UTC le 4 mars = 00h30 heure de Paris le 5 mars (hiver, +1h).
+    const ligneMinuit = { ...ligne, date: "2026-03-04T23:30:00.000Z" };
+    const csv = genererCSV([ligneMinuit]);
+    const ligneCSV = csv.split("\r\n")[1];
+
+    expect(ligneCSV).toContain("05/03/2026");
+    expect(ligneCSV).not.toContain("04/03/2026");
+  });
 });
