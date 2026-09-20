@@ -233,6 +233,7 @@ export default function Dashboard() {
             return (
               <div
                 key={`${point.label}-${index}`}
+                title={`${point.label} : ${formateurEUR.format(point.ca)}`}
                 style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}
               >
                 {estMoisCourant && (
