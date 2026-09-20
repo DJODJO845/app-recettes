@@ -4,7 +4,7 @@ import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
 import { authenticate } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
-import { calculerTotauxDashboard } from "../lib/db/totaux.server";
+import { calculerTotauxDashboard, calculerEvolutionMensuelle } from "../lib/db/totaux.server";
 import { listerDernieresLignes } from "../lib/db/lignesLivre.server";
 import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.server";
 import { plafondAnnuel, type NiveauAlertePlafond } from "../lib/domain/reglementation";
@@ -13,6 +13,7 @@ import { MentionLegale } from "../lib/ui/MentionLegale";
 import { CercleIcone } from "../lib/ui/CercleIcone";
 
 const NOMBRE_DERNIERES_RECETTES = 5;
+const NOMBRE_MOIS_EVOLUTION = 6;
 
 const COULEUR_ALERTE: Record<NiveauAlertePlafond, string> = {
   ok: "#008060",
@@ -66,16 +67,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const pourcentagePlafond = Math.min(100, Math.round((totaux.caAnnuelEncaisse / plafond) * 100));
 
   const dernieresLignes = await listerDernieresLignes(session.shop, NOMBRE_DERNIERES_RECETTES);
+  const evolutionMensuelle = await calculerEvolutionMensuelle(session.shop, NOMBRE_MOIS_EVOLUTION);
 
-  return { totaux, plafond, pourcentagePlafond, dernieresLignes };
+  return { totaux, plafond, pourcentagePlafond, dernieresLignes, evolutionMensuelle };
 };
 
 const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
 const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
 export default function Dashboard() {
-  const { totaux, plafond, pourcentagePlafond, dernieresLignes } = useLoaderData<typeof loader>();
+  const { totaux, plafond, pourcentagePlafond, dernieresLignes, evolutionMensuelle } = useLoaderData<typeof loader>();
   const badge = BADGE_ALERTE[totaux.niveauAlerte];
+  const maxEvolution = Math.max(...evolutionMensuelle.map((point) => point.ca), 1);
 
   return (
     <s-page heading="Tableau de bord">
@@ -161,6 +164,37 @@ export default function Dashboard() {
             </s-banner>
           )}
         </s-stack>
+      </s-section>
+
+      <s-section heading="Évolution du CA encaissé">
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "12px", height: "150px" }}>
+          {evolutionMensuelle.map((point, index) => {
+            const estMoisCourant = index === evolutionMensuelle.length - 1;
+            const hauteur = point.ca > 0 ? Math.max(4, Math.round((point.ca / maxEvolution) * 110)) : 4;
+
+            return (
+              <div
+                key={`${point.label}-${index}`}
+                style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}
+              >
+                {estMoisCourant && (
+                  <s-text color="subdued">{formateurEUR.format(point.ca)}</s-text>
+                )}
+                <div
+                  style={{
+                    width: "100%",
+                    maxWidth: "40px",
+                    height: `${hauteur}px`,
+                    borderRadius: "4px 4px 0 0",
+                    background: estMoisCourant ? COULEUR_ALERTE.ok : "#B4E0D3",
+                    transition: "height 0.3s ease",
+                  }}
+                />
+                <s-text color="subdued">{point.label}</s-text>
+              </div>
+            );
+          })}
+        </div>
       </s-section>
 
       <s-section heading="Dernières recettes">

@@ -33,6 +33,36 @@ export interface TotauxDashboard {
   niveauAlerte: NiveauAlertePlafond;
 }
 
+export interface PointEvolutionMensuelle {
+  label: string;
+  ca: number;
+}
+
+/** CA encaissé mois par mois sur les `nombreMois` derniers mois (mois courant inclus), pour le graphique du Dashboard. */
+export async function calculerEvolutionMensuelle(
+  shopDomain: string,
+  nombreMois: number,
+  maintenant = new Date(),
+): Promise<PointEvolutionMensuelle[]> {
+  const annee = maintenant.getUTCFullYear();
+  const mois = maintenant.getUTCMonth();
+
+  const debut = new Date(Date.UTC(annee, mois - (nombreMois - 1), 1));
+  const fin = new Date(Date.UTC(annee, mois + 1, 0, 23, 59, 59));
+  const lignes = await listerLignes(shopDomain, { debut, fin });
+
+  const points: PointEvolutionMensuelle[] = [];
+  for (let i = nombreMois - 1; i >= 0; i--) {
+    const moisDebut = new Date(Date.UTC(annee, mois - i, 1));
+    const moisFin = new Date(Date.UTC(annee, mois - i + 1, 0, 23, 59, 59));
+    points.push({
+      label: moisDebut.toLocaleDateString("fr-FR", { month: "short" }),
+      ca: calculerCAPeriode(lignes, moisDebut, moisFin),
+    });
+  }
+  return points;
+}
+
 export async function calculerTotauxDashboard(
   shopDomain: string,
   periodicite: "MENSUELLE" | "TRIMESTRIELLE",
