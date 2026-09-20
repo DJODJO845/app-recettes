@@ -10,17 +10,26 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, billing } = await authenticate.admin(request);
   await obtenirOuCreerBoutique(session.shop);
 
+  // Facturation TEST par défaut (aucune carte requise), quel que soit
+  // l'hébergeur — NODE_ENV n'est pas fiable pour ça : Render le met souvent à
+  // "production" par défaut, ce qui aurait silencieusement demandé un vrai
+  // moyen de paiement sur une boutique de démonstration (c'est exactement ce
+  // qui vient de se produire). Passer en facturation réelle est désormais un
+  // choix explicite : variable d'env SHOPIFY_BILLING_LIVE=true sur Render,
+  // à activer seulement une fois prêt à facturer de vrais clients.
+  const facturationReelle = process.env.SHOPIFY_BILLING_LIVE === "true";
+
   // Bloque l'accès tant que l'abonnement (ou l'essai de 7 jours) n'est pas
   // actif — billing.request() lève une redirection vers la page de
   // confirmation Shopify, donc rien après cet appel ne s'exécute si l'essai
   // n'a pas encore été accepté.
   await billing.require({
     plans: [FORFAIT_MENSUEL],
-    isTest: process.env.NODE_ENV !== "production",
+    isTest: !facturationReelle,
     onFailure: async () =>
       billing.request({
         plan: FORFAIT_MENSUEL,
-        isTest: process.env.NODE_ENV !== "production",
+        isTest: !facturationReelle,
         returnUrl: `${process.env.SHOPIFY_APP_URL}/app`,
       }),
   });
