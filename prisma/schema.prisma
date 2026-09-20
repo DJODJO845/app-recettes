@@ -101,4 +101,9 @@ model Session {
   emailVerified       Boolean?  @default(false)
   refreshToken        String?
   refreshTokenExpires DateTime?
+
+  // @shopify/shopify-app-session-storage-prisma vérifie l'existence de la table par
+  // son nom exact en minuscules ("session") — sans ce mapping, Prisma créerait/
+  // chercherait "Session" (majuscule), que Postgres traite comme un nom différent.
+  @@map("session")
 }
