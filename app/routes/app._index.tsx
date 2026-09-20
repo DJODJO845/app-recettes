@@ -7,6 +7,7 @@ import { obtenirOuCreerBoutique, enregistrerImportation } from "../lib/db/boutiq
 import { calculerTotauxDashboard, calculerEvolutionMensuelle } from "../lib/db/totaux.server";
 import { listerDernieresLignes } from "../lib/db/lignesLivre.server";
 import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.server";
+import { REQUETE_DEVISE_BOUTIQUE, type DeviseBoutiqueResponse } from "../lib/shopify/graphql";
 import { plafondAnnuel, type NiveauAlertePlafond } from "../lib/domain/reglementation";
 import { BanniereExport } from "../lib/ui/BanniereExport";
 import { MentionLegale } from "../lib/ui/MentionLegale";
@@ -74,6 +75,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     );
   }
 
+  // Tous les montants affichés supposent que la boutique est en euros (amountSet
+  // renvoie la devise de la boutique, pas forcément EUR) : sans cette vérification,
+  // une boutique dans une autre devise verrait ses montants affichés avec un "€"
+  // trompeur, sans le savoir.
+  let deviseBoutique = "EUR";
+  try {
+    const reponseDevise = await admin.graphql(REQUETE_DEVISE_BOUTIQUE);
+    const jsonDevise = (await reponseDevise.json()) as DeviseBoutiqueResponse;
+    deviseBoutique = jsonDevise.data.shop.currencyCode;
+  } catch (erreur) {
+    console.error("Échec de la vérification de la devise de la boutique :", erreur);
+  }
+
   const totaux = await calculerTotauxDashboard(
     session.shop,
     boutique.periodicite,
@@ -101,6 +115,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     evolutionMensuelle,
     doitRappelerExport,
     typeActivite: boutique.typeActivite,
+    deviseBoutique,
   };
 };
 
@@ -114,12 +129,24 @@ export default function Dashboard() {
     evolutionMensuelle,
     doitRappelerExport,
     typeActivite,
+    deviseBoutique,
   } = useLoaderData<typeof loader>();
   const badge = BADGE_ALERTE[totaux.niveauAlerte];
   const maxEvolution = Math.max(...evolutionMensuelle.map((point) => point.ca), 1);
 
   return (
     <s-page heading="Tableau de bord">
+      {deviseBoutique !== "EUR" && (
+        <s-banner tone="critical" heading="Boutique configurée hors euros">
+          <s-paragraph>
+            Votre boutique Shopify utilise la devise {deviseBoutique}, pas l&apos;euro.
+            Tous les montants affichés dans cette app sont pourtant présentés en euros
+            (€) : ils ne correspondent donc pas à votre CA réel en EUR. Ne déclarez pas
+            ces chiffres à l&apos;URSSAF tant que ce point n&apos;est pas résolu.
+          </s-paragraph>
+        </s-banner>
+      )}
+
       {doitRappelerExport && <BanniereExport />}
 
       {totaux.caPeriodeCourante === 0 && (

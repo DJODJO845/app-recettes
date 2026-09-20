@@ -79,3 +79,22 @@ export interface CommandesRecentesResponse {
     };
   };
 }
+
+/**
+ * Les montants importés (amountSet.shopMoney) sont dans la devise de la boutique,
+ * pas forcément en euros. L'app affiche partout un symbole "€" sans jamais vérifier
+ * cette hypothèse : sur une boutique configurée dans une autre devise, les montants
+ * seraient silencieusement affichés avec le mauvais symbole — trompeur pour une
+ * déclaration URSSAF, qui exige des montants en euros. Voir app._index.tsx.
+ */
+export const REQUETE_DEVISE_BOUTIQUE = `#graphql
+  query DeviseBoutique {
+    shop {
+      currencyCode
+    }
+  }
+`;
+
+export interface DeviseBoutiqueResponse {
+  data: { shop: { currencyCode: string } };
+}
