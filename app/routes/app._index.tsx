@@ -65,6 +65,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   );
 
   const plafond = plafondAnnuel(boutique.typeActivite.toLowerCase() as "commerce" | "services" | "mixte");
+  const plafondServices = plafondAnnuel("services");
   const pourcentagePlafond = Math.min(100, Math.round((totaux.caAnnuelEncaisse / plafond) * 100));
 
   const dernieresLignes = await listerDernieresLignes(session.shop, NOMBRE_DERNIERES_RECETTES);
@@ -75,15 +76,32 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     : null;
   const doitRappelerExport = joursDepuisExport === null || joursDepuisExport >= JOURS_AVANT_RAPPEL_EXPORT;
 
-  return { totaux, plafond, pourcentagePlafond, dernieresLignes, evolutionMensuelle, doitRappelerExport };
+  return {
+    totaux,
+    plafond,
+    plafondServices,
+    pourcentagePlafond,
+    dernieresLignes,
+    evolutionMensuelle,
+    doitRappelerExport,
+    typeActivite: boutique.typeActivite,
+  };
 };
 
 const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
 const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
 export default function Dashboard() {
-  const { totaux, plafond, pourcentagePlafond, dernieresLignes, evolutionMensuelle, doitRappelerExport } =
-    useLoaderData<typeof loader>();
+  const {
+    totaux,
+    plafond,
+    plafondServices,
+    pourcentagePlafond,
+    dernieresLignes,
+    evolutionMensuelle,
+    doitRappelerExport,
+    typeActivite,
+  } = useLoaderData<typeof loader>();
   const badge = BADGE_ALERTE[totaux.niveauAlerte];
   const maxEvolution = Math.max(...evolutionMensuelle.map((point) => point.ca), 1);
 
@@ -155,6 +173,17 @@ export default function Dashboard() {
             <s-text color="subdued">Seuils d&apos;alerte : 80 % et 95 %</s-text>
             <s-text color="subdued">{formateurEUR.format(plafond)}</s-text>
           </s-stack>
+          {typeActivite === "MIXTE" && (
+            <s-banner tone="info">
+              <s-paragraph>
+                Activité mixte : cette jauge ne suit que le plafond global. La part
+                « services » de votre CA a aussi son propre sous-plafond
+                ({formateurEUR.format(plafondServices)}), que l&apos;app ne
+                distingue pas automatiquement — vérifiez-le de votre côté ou avec
+                un expert-comptable.
+              </s-paragraph>
+            </s-banner>
+          )}
           {totaux.niveauAlerte === "avertissement" && (
             <s-banner tone="warning">
               <s-paragraph>
