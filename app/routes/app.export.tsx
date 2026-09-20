@@ -70,6 +70,33 @@ function exporterPDF(shopify: ReturnType<typeof useAppBridge>, shop: string, hos
     });
 }
 
+function CercleIcone({
+  type,
+  tone,
+  fond,
+}: {
+  type: "export" | "print";
+  tone: "success" | "info";
+  fond: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "40px",
+        height: "40px",
+        borderRadius: "50%",
+        background: fond,
+        flexShrink: 0,
+      }}
+    >
+      <s-icon type={type} tone={tone} />
+    </div>
+  );
+}
+
 export default function Export() {
   const { shop, host } = useLoaderData<typeof loader>();
   const shopify = useAppBridge();
@@ -87,15 +114,15 @@ export default function Export() {
         <s-grid gridTemplateColumns="1fr 1fr" gap="base">
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="base">
-              <s-stack direction="inline" gap="small-200" alignItems="center">
-                <s-icon type="export" tone="success" />
+              <s-stack direction="inline" gap="small-300" alignItems="center">
+                <CercleIcone type="export" tone="success" fond="#E3F1EC" />
                 <s-text type="strong">Export CSV</s-text>
               </s-stack>
               <s-text color="subdued">
                 Toutes les lignes du livre, au format tableur — pour votre
                 comptable ou votre propre archivage.
               </s-text>
-              <s-button onClick={() => exporterCSV(shopify, shop, host)} icon="export">
+              <s-button onClick={() => exporterCSV(shopify, shop, host)} icon="export" variant="primary">
                 Télécharger le CSV
               </s-button>
             </s-stack>
@@ -103,15 +130,15 @@ export default function Export() {
 
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="base">
-              <s-stack direction="inline" gap="small-200" alignItems="center">
-                <s-icon type="print" tone="success" />
+              <s-stack direction="inline" gap="small-300" alignItems="center">
+                <CercleIcone type="print" tone="info" fond="#E1F0FA" />
                 <s-text type="strong">Version imprimable</s-text>
               </s-stack>
               <s-text color="subdued">
                 S&apos;ouvre dans un nouvel onglet, prête à imprimer ou à
                 enregistrer en PDF.
               </s-text>
-              <s-button onClick={() => exporterPDF(shopify, shop, host)} icon="print">
+              <s-button onClick={() => exporterPDF(shopify, shop, host)} icon="print" variant="primary">
                 Ouvrir la version imprimable
               </s-button>
             </s-stack>

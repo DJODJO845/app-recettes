@@ -102,7 +102,7 @@ export default function LivreDesRecettes() {
                   <s-table-cell>{ligne.modeReglement}</s-table-cell>
                   <s-table-cell>{ligne.canal}</s-table-cell>
                   <s-table-cell>
-                    <s-text tone={ligne.montant < 0 ? "critical" : undefined} type="strong">
+                    <s-text tone={ligne.montant < 0 ? "critical" : "success"} type="strong">
                       {formateurEUR.format(ligne.montant)}
                     </s-text>
                   </s-table-cell>

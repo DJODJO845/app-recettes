@@ -16,6 +16,44 @@ const COULEUR_ALERTE: Record<NiveauAlertePlafond, string> = {
   critique: "#D82C0D",
 };
 
+// Polaris limite volontairement les fonds de s-box à des gris neutres (une app
+// embarquée ne doit pas jurer avec les couleurs propres d'Admin). Pour un peu
+// de couleur sans sortir de cette contrainte, on ajoute des teintes légères en
+// accent — icône dans un cercle teinté, chiffre-clé coloré — plutôt que des
+// fonds de carte colorés.
+const TEINTE_ALERTE: Record<NiveauAlertePlafond, string> = {
+  ok: "#E3F1EC",
+  avertissement: "#FCF1D8",
+  critique: "#FBEAE5",
+};
+
+function CercleIcone({
+  type,
+  tone,
+  fond,
+}: {
+  type: string;
+  tone: "success" | "warning" | "critical";
+  fond: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "40px",
+        height: "40px",
+        borderRadius: "50%",
+        background: fond,
+        flexShrink: 0,
+      }}
+    >
+      <s-icon type={type as "cash-euro" | "gauge"} tone={tone} />
+    </div>
+  );
+}
+
 const BADGE_ALERTE = {
   ok: { tone: "success", label: "Sous contrôle", icone: "check-circle-filled" },
   avertissement: { tone: "warning", label: "À surveiller", icone: "alert-triangle" },
@@ -76,23 +114,27 @@ export default function Dashboard() {
         <s-grid gridTemplateColumns="1fr 1fr" gap="base">
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="small-200">
-              <s-stack direction="inline" gap="small-200" alignItems="center">
-                <s-icon type="cash-euro" tone="success" />
+              <s-stack direction="inline" gap="small-300" alignItems="center">
+                <CercleIcone type="cash-euro" tone="success" fond={TEINTE_ALERTE.ok} />
                 <s-text type="strong" color="subdued">CA encaissé — {totaux.periode.label}</s-text>
               </s-stack>
-              <s-heading>{formateurEUR.format(totaux.caPeriodeCourante)}</s-heading>
+              <div style={{ color: COULEUR_ALERTE.ok, fontSize: "28px", fontWeight: 700, lineHeight: 1.2 }}>
+                {formateurEUR.format(totaux.caPeriodeCourante)}
+              </div>
               <s-text color="subdued">Montant à déclarer à l&apos;URSSAF pour cette période</s-text>
             </s-stack>
           </s-box>
 
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="small-200">
-              <s-stack direction="inline" gap="small-200" alignItems="center">
-                <s-icon type="gauge" tone={badge.tone} />
+              <s-stack direction="inline" gap="small-300" alignItems="center">
+                <CercleIcone type="gauge" tone={badge.tone} fond={TEINTE_ALERTE[totaux.niveauAlerte]} />
                 <s-text type="strong" color="subdued">Plafond annuel</s-text>
               </s-stack>
               <s-stack direction="inline" gap="small-200" alignItems="center">
-                <s-heading>{pourcentagePlafond}%</s-heading>
+                <div style={{ color: COULEUR_ALERTE[totaux.niveauAlerte], fontSize: "28px", fontWeight: 700, lineHeight: 1.2 }}>
+                  {pourcentagePlafond}%
+                </div>
                 <s-badge tone={badge.tone} icon={badge.icone}>{badge.label}</s-badge>
               </s-stack>
               <s-text color="subdued">
