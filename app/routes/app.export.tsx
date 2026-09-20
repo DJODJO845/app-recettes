@@ -7,7 +7,12 @@ import { MentionLegale } from "../lib/ui/MentionLegale";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  const host = new URL(request.url).searchParams.get("host") ?? "";
+  // Le paramètre `host` de l'URL ne survit pas toujours à la navigation
+  // React Router entre les pages de l'app (confirmé par les logs Render :
+  // `host=` vide sur /app/export/csv). Plutôt que d'en dépendre, on le
+  // recalcule nous-mêmes : c'est juste base64("{shop}/admin"), le format
+  // que Shopify lui-même utilise (cf. sanitizeHost dans @shopify/shopify-api).
+  const host = Buffer.from(`${session.shop}/admin`).toString("base64");
   return { shop: session.shop, host };
 };
 
