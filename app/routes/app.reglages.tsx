@@ -110,7 +110,7 @@ export default function Reglages() {
                 name="emailRappel"
                 label="Email pour le rappel de fin de période"
                 defaultValue={boutique.emailRappel ?? ""}
-                placeholder="Laisser vide pour utiliser l'email de votre compte Shopify"
+                details="Laisser vide pour utiliser l'email de votre compte Shopify"
               />
 
               <s-button
