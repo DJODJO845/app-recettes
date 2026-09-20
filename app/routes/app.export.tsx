@@ -9,19 +9,30 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 /**
- * Navigation directe et synchrone, déclenchée dans le même tick que le clic
- * (pas de fetch()/await avant) : certains navigateurs mobiles annulent
- * silencieusement une action de téléchargement/ouverture déclenchée après un
- * appel asynchrone, car elle n'est plus rattachée au geste utilisateur.
- * Le CSV a un en-tête Content-Disposition: attachment, donc cette navigation
- * déclenche un téléchargement sans quitter la page actuelle.
+ * L'app tourne dans l'iframe intégré de Shopify : `window.location.href` ne
+ * navigue que cet iframe, où un téléchargement (Content-Disposition:
+ * attachment) est silencieusement ignoré par le navigateur (pas d'erreur,
+ * juste rien qui se passe). On déclenche le téléchargement via un iframe
+ * caché dédié — technique standard qui fonctionne même imbriquée dans
+ * l'iframe Shopify, sans jamais faire naviguer notre propre page.
  */
 function exporterCSV() {
-  window.location.href = "/app/export/csv";
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  iframe.src = "/app/export/csv";
+  document.body.appendChild(iframe);
+  setTimeout(() => iframe.remove(), 10000);
 }
 
+/**
+ * Pour la version imprimable, on veut au contraire sortir complètement de
+ * l'iframe Shopify (impossible d'imprimer proprement une page à l'intérieur
+ * d'un iframe imbriqué). `window.top.location.href` est l'exception que les
+ * navigateurs autorisent pour naviguer une fenêtre de plus haut niveau même
+ * si elle est cross-origin (on peut l'écrire, pas la lire).
+ */
 function exporterPDF() {
-  window.location.href = "/app/export/imprimer";
+  window.top!.location.href = window.location.origin + "/app/export/imprimer";
 }
 
 export default function Export() {
