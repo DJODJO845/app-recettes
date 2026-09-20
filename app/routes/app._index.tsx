@@ -25,7 +25,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   } catch (erreur) {
     // On n'empêche pas l'affichage du tableau de bord si l'import échoue (ex. souci
     // réseau ponctuel) : on montre les données déjà en base et on journalise l'erreur.
-    console.error("Échec de l'import des commandes Shopify :", erreur);
+    // On extrait explicitement graphQLErrors : les logs par défaut le tronquent en
+    // "[Array]" (limite de profondeur de console.error), ce qui masque le vrai message.
+    const graphQLErrors = (erreur as { graphQLErrors?: unknown })?.graphQLErrors;
+    console.error(
+      "Échec de l'import des commandes Shopify :",
+      erreur instanceof Error ? erreur.message : erreur,
+      graphQLErrors ? JSON.stringify(graphQLErrors) : "",
+    );
   }
 
   const totaux = await calculerTotauxDashboard(
