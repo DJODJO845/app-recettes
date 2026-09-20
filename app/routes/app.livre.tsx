@@ -1,11 +1,10 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useSearchParams } from "react-router";
-import { boundary } from "@shopify/shopify-app-react-router/server";
-
 import { authenticate } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import type { NatureLigneLivre } from "../lib/domain/types";
+import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
 const LIBELLES_NATURE: Record<NatureLigneLivre, string> = {
   vente: "Vente",
@@ -118,6 +117,4 @@ export default function LivreDesRecettes() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
-};
+export const headers: HeadersFunction = headersNonMisEnCache;

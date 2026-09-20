@@ -1,12 +1,12 @@
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
-import { boundary } from "@shopify/shopify-app-react-router/server";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useEffect } from "react";
 
 import { authenticate } from "../shopify.server";
 import { obtenirOuCreerBoutique, mettreAJourReglages } from "../lib/db/boutique.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
+import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -89,6 +89,4 @@ export default function Reglages() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
-};
+export const headers: HeadersFunction = headersNonMisEnCache;

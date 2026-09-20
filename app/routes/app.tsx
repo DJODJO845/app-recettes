@@ -5,6 +5,7 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate, FORFAIT_MENSUEL } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
+import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, billing } = await authenticate.admin(request);
@@ -63,6 +64,4 @@ export function ErrorBoundary() {
   return boundary.error(useRouteError());
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
-};
+export const headers: HeadersFunction = headersNonMisEnCache;

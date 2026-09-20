@@ -1,6 +1,6 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { boundary } from "@shopify/shopify-app-react-router/server";
+import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
 import { authenticate } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
@@ -188,6 +188,4 @@ export default function Dashboard() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
-};
+export const headers: HeadersFunction = headersNonMisEnCache;
