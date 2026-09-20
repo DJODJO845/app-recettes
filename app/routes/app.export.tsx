@@ -28,11 +28,23 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 async function recupererAvecJeton(shopify: ReturnType<typeof useAppBridge>, url: string) {
   const token = await shopify.idToken();
   const reponse = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!reponse.ok) throw new Error(`Échec (${reponse.status})`);
+  if (!reponse.ok) {
+    const corps = await reponse.text().catch(() => "");
+    throw new Error(`HTTP ${reponse.status} — ${corps.slice(0, 120)}`);
+  }
   return reponse;
 }
 
+/**
+ * Le bouton doit donner un retour visible IMMÉDIATEMENT (avant même la
+ * requête) : sans ça, un échec silencieux ressemble exactement à un clic qui
+ * n'a rien déclenché, et on ne peut pas distinguer "le code ne tourne pas" de
+ * "le code tourne mais échoue en silence" (alert() est probablement filtré
+ * dans l'iframe Shopify — le toast App Bridge, lui, est rendu par Shopify
+ * Admin lui-même, donc fiable).
+ */
 function exporterCSV(shopify: ReturnType<typeof useAppBridge>) {
+  shopify.toast.show("Préparation du CSV…");
   recupererAvecJeton(shopify, "/app/export/csv")
     .then(async (reponse) => {
       const blob = await reponse.blob();
@@ -44,10 +56,11 @@ function exporterCSV(shopify: ReturnType<typeof useAppBridge>) {
       lien.click();
       lien.remove();
       setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      shopify.toast.show("CSV téléchargé");
     })
     .catch((erreur) => {
       console.error(erreur);
-      shopify.toast.show("Erreur pendant le téléchargement du CSV", { isError: true });
+      shopify.toast.show(`Erreur CSV : ${String(erreur?.message ?? erreur)}`, { isError: true, duration: 8000 });
     });
 }
 
@@ -57,11 +70,12 @@ function exporterCSV(shopify: ReturnType<typeof useAppBridge>) {
  * suite, puis on le remplit une fois le contenu récupéré avec le jeton.
  */
 function exporterPDF(shopify: ReturnType<typeof useAppBridge>) {
+  shopify.toast.show("Préparation de la version imprimable…");
   const fenetre = window.open("", "_blank");
   recupererAvecJeton(shopify, "/app/export/imprimer")
     .then(async (reponse) => {
       const html = await reponse.text();
-      if (!fenetre) throw new Error("pop-up bloquée");
+      if (!fenetre) throw new Error("pop-up bloquée par le navigateur");
       fenetre.document.open();
       fenetre.document.write(html);
       fenetre.document.close();
@@ -69,7 +83,7 @@ function exporterPDF(shopify: ReturnType<typeof useAppBridge>) {
     .catch((erreur) => {
       console.error(erreur);
       fenetre?.close();
-      shopify.toast.show("Erreur pendant l'ouverture de la version imprimable", { isError: true });
+      shopify.toast.show(`Erreur PDF : ${String(erreur?.message ?? erreur)}`, { isError: true, duration: 8000 });
     });
 }
 
