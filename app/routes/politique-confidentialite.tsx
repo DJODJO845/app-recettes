@@ -1,4 +1,5 @@
 import type { MetaFunction } from "react-router";
+import { CONTACT_EMAIL } from "../lib/ui/contact";
 
 /**
  * Route publique (pas de authenticate.admin) : c'est l'URL à renseigner dans
@@ -9,7 +10,6 @@ export const meta: MetaFunction = () => [
   { title: "Politique de confidentialité — Recettes URSSAF" },
 ];
 
-const CONTACT_EMAIL = "jonathan-8495@hotmail.com";
 const DERNIERE_MISE_A_JOUR = "20 septembre 2026";
 
 export default function PolitiqueConfidentialite() {
