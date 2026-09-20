@@ -108,7 +108,7 @@ export default function Reglages() {
 
               <s-email-field
                 name="emailRappel"
-                label="Email pour le rappel de fin de période"
+                label="Email de rappel"
                 defaultValue={boutique.emailRappel ?? ""}
                 details="Laisser vide pour utiliser l'email de votre compte Shopify"
               />
