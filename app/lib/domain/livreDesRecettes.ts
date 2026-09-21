@@ -88,7 +88,16 @@ function construireLigne(
   client: string,
 ): LigneLivreDesRecettes {
   const estRemboursement = transaction.kind === "refund";
-  const estReglementParCarteCadeau = !estRemboursement && transaction.gateway === "gift_card";
+  const estViaCarteCadeau = transaction.gateway === "gift_card";
+  const estReglementParCarteCadeau = !estRemboursement && estViaCarteCadeau;
+  // Un remboursement émis sous forme d'avoir/carte cadeau (au lieu d'un vrai retour
+  // d'argent sur le moyen de paiement d'origine) ne fait sortir aucun argent réel du
+  // compte du marchand : Shopify crédite juste une carte cadeau en interne. Le
+  // compter comme un encaissement négatif ferait baisser le CA déclaré à tort — pour
+  // une vente déjà réglée en carte cadeau (jamais comptée dans le CA, voir
+  // reglement_carte_cadeau) comme pour une vente réglée en argent réel (l'argent est
+  // toujours dans le compte du marchand, seulement transformé en avoir dû au client).
+  const estRemboursementParCarteCadeau = estRemboursement && estViaCarteCadeau;
 
   let nature: NatureLigneLivre;
   if (estRemboursement) {
@@ -120,7 +129,7 @@ function construireLigne(
     montant,
     modeReglement: libelleModeReglement(transaction.gateway),
     canal: commande.sourceName,
-    compteDansCA: !estReglementParCarteCadeau,
+    compteDansCA: !estReglementParCarteCadeau && !estRemboursementParCarteCadeau,
     avertissement,
   };
 }

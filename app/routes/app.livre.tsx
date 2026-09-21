@@ -199,7 +199,11 @@ export default function LivreDesRecettes() {
                         {LIBELLES_NATURE[ligne.nature]}
                       </s-badge>
                       {!ligne.compteDansCA && (
-                        <s-text color="subdued">Déjà comptée à l&apos;achat de la carte</s-text>
+                        <s-text color="subdued">
+                          {ligne.nature === "remboursement"
+                            ? "Remboursé en avoir/carte cadeau : aucun argent sorti de votre compte"
+                            : "Déjà comptée à l'achat de la carte"}
+                        </s-text>
                       )}
                     </s-stack>
                   </s-table-cell>

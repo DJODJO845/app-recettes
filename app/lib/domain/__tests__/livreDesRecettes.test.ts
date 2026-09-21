@@ -110,6 +110,30 @@ describe("construireLignesLivre — carte cadeau (émission vs rédemption)", ()
   });
 });
 
+describe("construireLignesLivre — remboursement émis en avoir/carte cadeau", () => {
+  it("ne réduit pas le CA : aucun argent réel ne sort du compte du marchand", () => {
+    const cmd = commande({
+      id: "gid://9",
+      name: "#1009",
+      transactions: [
+        { id: "txn-9-vente", orderId: "gid://9", kind: "sale", status: "success", amount: 80, gateway: "shopify_payments", processedAt: "2026-05-10T08:00:00Z" },
+        // Le marchand rembourse sous forme d'avoir (carte cadeau) plutôt que de rendre
+        // l'argent sur la carte d'origine : Shopify crédite juste une carte cadeau,
+        // aucun argent ne sort réellement du compte du marchand.
+        { id: "txn-9-remb", orderId: "gid://9", kind: "refund", status: "success", amount: 80, gateway: "gift_card", processedAt: "2026-05-12T09:00:00Z" },
+      ],
+    });
+
+    const lignes = construireLignesLivre(cmd);
+
+    expect(lignes).toHaveLength(2);
+    expect(lignes[1]).toMatchObject({ nature: "remboursement", montant: -80, compteDansCA: false });
+
+    const ca = calculerCAPeriode(lignes, new Date("2026-05-01"), new Date("2026-05-31T23:59:59Z"));
+    expect(ca).toBe(80);
+  });
+});
+
 describe("construireLignesLivre — paiement manuel (virement, espèces)", () => {
   it("compte l'encaissement mais ajoute un avertissement de vérification de la date", () => {
     const cmd = commande({
