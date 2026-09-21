@@ -21,6 +21,13 @@ export default function MentionsLegales() {
         </s-paragraph>
       </s-section>
 
+      <s-section heading="Hébergeur">
+        <s-paragraph>
+          Render Services, Inc. — 525 Brannan Street Ste 300, San Francisco, CA
+          94107, États-Unis. Téléphone : +1 415-319-8186. Email : legal@render.com.
+        </s-paragraph>
+      </s-section>
+
       <s-section>
         <s-paragraph>
           <s-text type="strong">Cette app est une aide, elle ne remplace pas un expert-comptable.</s-text>
