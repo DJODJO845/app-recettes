@@ -105,7 +105,12 @@ export default function Reglages() {
                 </s-option>
               </s-select>
 
-              <s-select name="periodicite" label="Périodicité de déclaration" icon="calendar">
+              <s-select
+                name="periodicite"
+                label="Périodicité de déclaration"
+                icon="calendar"
+                details="Doit correspondre au choix fait lors de votre inscription à l'URSSAF (autoentrepreneur.urssaf.fr) : c'est ce rythme, pas celui-ci, qui détermine votre vraie échéance légale. Un mauvais choix ici décale les périodes affichées et les rappels par email, sans changer votre obligation réelle."
+              >
                 <s-option value="MENSUELLE" defaultSelected={boutique.periodicite === "MENSUELLE"}>
                   Mensuelle
                 </s-option>
@@ -157,7 +162,7 @@ export default function Reglages() {
               </s-stack>
               <s-text color="subdued">
                 {statutAbonnement.enEssai
-                  ? `Encore ${statutAbonnement.joursRestants} jour(s) d'essai gratuit, jusqu'au ${formateurDate.format(statutAbonnement.dateProchainePrelevement)}. Premier prélèvement de 9,99 € ensuite.`
+                  ? `Encore ${statutAbonnement.joursRestants} jour${statutAbonnement.joursRestants > 1 ? "s" : ""} d'essai gratuit, jusqu'au ${formateurDate.format(statutAbonnement.dateProchainePrelevement)}. Premier prélèvement de 9,99 € ensuite.`
                   : `9,99 € / mois. Prochain prélèvement le ${formateurDate.format(statutAbonnement.dateProchainePrelevement)}.`}
               </s-text>
             </s-stack>
