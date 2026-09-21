@@ -16,6 +16,7 @@ export default function MentionsLegales() {
           Jonathan Larue, entrepreneur individuel (SIRET 900 961 939 00015, RCS Clermont-Ferrand).
         </s-paragraph>
         <s-paragraph>94 avenue de Châtel-Guyon, 63200 Saint-Bonnet-près-Riom, France.</s-paragraph>
+        <s-paragraph>TVA non applicable, article 293 B du CGI.</s-paragraph>
         <s-paragraph>
           Contact : <s-link href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</s-link>.
         </s-paragraph>
