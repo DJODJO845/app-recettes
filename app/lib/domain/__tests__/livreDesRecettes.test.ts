@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculerCAPeriode, construireLignesLivre } from "../livreDesRecettes";
+import { calculerCAPeriode, commandeEstDansPerimetre, construireLignesLivre } from "../livreDesRecettes";
 import { niveauAlertePlafond, plafondAnnuel } from "../reglementation";
 import type { CommandeShopify } from "../types";
 
@@ -182,6 +182,54 @@ describe("construireLignesLivre — vente via Shopify POS", () => {
     const lignes = construireLignesLivre(cmd);
 
     expect(lignes[0]).toMatchObject({ montant: 75, compteDansCA: true, canal: "pos" });
+  });
+});
+
+describe("commandeEstDansPerimetre", () => {
+  it("écarte une commande entière (vente + remboursement) vendue avant le plancher", () => {
+    const cmd = commande({
+      id: "gid://10",
+      name: "#1010",
+      transactions: [
+        { id: "txn-10-vente", orderId: "gid://10", kind: "sale", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-01-05T10:00:00Z" },
+        { id: "txn-10-remb", orderId: "gid://10", kind: "refund", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-07-01T10:00:00Z" },
+      ],
+    });
+
+    // dateDebutActivite déclarée après la vente d'origine, mais avant le remboursement :
+    // toute la commande doit être écartée, pas seulement la ligne de vente — sinon le
+    // remboursement apparaîtrait seul, sans vente correspondante dans le livre.
+    expect(commandeEstDansPerimetre(cmd, new Date("2026-03-01T00:00:00Z"))).toBe(false);
+  });
+
+  it("garde une commande dont la vente d'origine est après le plancher", () => {
+    const cmd = commande({
+      id: "gid://11",
+      name: "#1011",
+      transactions: [
+        { id: "txn-11-vente", orderId: "gid://11", kind: "sale", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-04-05T10:00:00Z" },
+      ],
+    });
+
+    expect(commandeEstDansPerimetre(cmd, new Date("2026-03-01T00:00:00Z"))).toBe(true);
+  });
+
+  it("le filtre commande + ligne combinés n'introduisent aucun remboursement orphelin", () => {
+    const venteHorsPerimetre = commande({
+      id: "gid://12",
+      name: "#1012",
+      transactions: [
+        { id: "txn-12-vente", orderId: "gid://12", kind: "sale", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-01-05T10:00:00Z" },
+        { id: "txn-12-remb", orderId: "gid://12", kind: "refund", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-07-01T10:00:00Z" },
+      ],
+    });
+
+    const plancher = new Date("2026-03-01T00:00:00Z");
+    const lignes = commandeEstDansPerimetre(venteHorsPerimetre, plancher)
+      ? construireLignesLivre(venteHorsPerimetre)
+      : [];
+
+    expect(lignes).toHaveLength(0);
   });
 });
 

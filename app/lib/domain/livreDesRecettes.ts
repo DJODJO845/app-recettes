@@ -134,6 +134,30 @@ function construireLigne(
   };
 }
 
+/**
+ * Une commande est dans le périmètre de l'activité déclarée si sa vente d'origine
+ * (transaction "sale"/"capture", jamais "refund") a eu lieu à ou après `plancher`
+ * (= dateDebutActivite du marchand). Sert à écarter une commande ENTIÈREMENT —
+ * vente ET remboursement compris — plutôt que de filtrer chaque ligne indépendamment :
+ * une commande vendue avant le début d'activité déclaré, puis remboursée après (ex.
+ * ventes de test avant l'inscription officielle en micro-entreprise, remboursées une
+ * fois l'activité commencée), verrait sinon sa ligne de vente écartée (hors périmètre)
+ * mais sa ligne de remboursement conservée (après le plancher) : un remboursement sans
+ * vente correspondante dans le livre, qui ferait baisser à tort le CA déclaré de la
+ * période où il tombe — alors que cette vente n'a jamais été comptée dans le CA pour
+ * commencer. Si la commande n'a aucune transaction de vente (cas anormal), on la garde
+ * par défaut : le filtre par ligne dans importerCommandesRecentes reste le filet de
+ * sécurité final.
+ */
+export function commandeEstDansPerimetre(commande: CommandeShopify, plancher: Date): boolean {
+  const datesVentes = commande.transactions
+    .filter((transaction) => transaction.kind !== "refund")
+    .map((transaction) => new Date(transaction.processedAt).getTime());
+
+  if (datesVentes.length === 0) return true;
+  return Math.min(...datesVentes) >= plancher.getTime();
+}
+
 /** Somme des lignes qui comptent dans le CA encaissé, sur une période donnée (bornes incluses). */
 export function calculerCAPeriode(
   lignes: LigneLivreDesRecettes[],
