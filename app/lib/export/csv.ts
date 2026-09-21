@@ -10,8 +10,15 @@ const EN_TETES = ["Date", "Référence", "Client", "Nature", "Mode de règlement
 // juste après minuit heure de Paris s'exporterait avec la date de la veille.
 const formateurDateCSV = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris" });
 
+// \r inclus, pas seulement \n : un retour chariot isolé (sans \n) dans un champ non
+// entouré de guillemets serait interprété par un tableur comme une fin de ligne au
+// même titre que \r\n (le séparateur utilisé plus bas entre chaque ligne du CSV),
+// décalant silencieusement toutes les lignes suivantes. Sans incidence aujourd'hui
+// (reference vient de Shopify, client vaut toujours "Client" générique — voir
+// mapper.server.ts), mais deviendra pertinent une fois les vrais noms de clients
+// activés (un nom saisi au checkout est une donnée que le client contrôle).
 function echapperChampCSV(valeur: string): string {
-  if (/[;"\n]/.test(valeur)) {
+  if (/[;"\r\n]/.test(valeur)) {
     return `"${valeur.replace(/"/g, '""')}"`;
   }
   return valeur;

@@ -49,4 +49,11 @@ describe("genererCSV", () => {
     expect(ligneCSV).toContain("Point de vente (vente rapide)");
     expect(ligneCSV).not.toContain("quick_sale");
   });
+
+  it("échappe un champ contenant un retour chariot isolé (\\r sans \\n)", () => {
+    const ligneAvecRetourChariot = { ...ligne, client: "Dupont\rJean" };
+    const csv = genererCSV([ligneAvecRetourChariot]);
+
+    expect(csv).toContain('"Dupont\rJean"');
+  });
 });
