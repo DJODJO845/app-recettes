@@ -34,9 +34,12 @@ export default function PolitiqueConfidentialite() {
 
       <h2>Qui sommes-nous</h2>
       <p>
-        « Recettes URSSAF » est une application Shopify éditée à titre
-        individuel. Pour toute question sur cette politique ou sur vos
-        données, contactez : <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+        « Recettes URSSAF » est une application Shopify éditée par Jonathan
+        Larue, entrepreneur individuel (SIRET 900 961 939 00015, RCS
+        Clermont-Ferrand), 94 avenue de Châtel-Guyon, 63200
+        Saint-Bonnet-près-Riom, France. Pour toute question sur cette
+        politique ou sur vos données, contactez :{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </p>
 
       <h2>Ce que l&apos;app fait</h2>

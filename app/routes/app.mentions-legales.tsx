@@ -1,6 +1,7 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
+import { CONTACT_EMAIL } from "../lib/ui/contact";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
@@ -10,6 +11,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function MentionsLegales() {
   return (
     <s-page heading="Mentions légales">
+      <s-section heading="Éditeur">
+        <s-paragraph>
+          Jonathan Larue, entrepreneur individuel (SIRET 900 961 939 00015, RCS Clermont-Ferrand).
+        </s-paragraph>
+        <s-paragraph>94 avenue de Châtel-Guyon, 63200 Saint-Bonnet-près-Riom, France.</s-paragraph>
+        <s-paragraph>
+          Contact : <s-link href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</s-link>.
+        </s-paragraph>
+      </s-section>
+
       <s-section>
         <s-paragraph>
           <s-text type="strong">Cette app est une aide, elle ne remplace pas un expert-comptable.</s-text>
