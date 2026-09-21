@@ -40,4 +40,13 @@ describe("genererCSV", () => {
     expect(ligneCSV).toContain("05/03/2026");
     expect(ligneCSV).not.toContain("04/03/2026");
   });
+
+  it("traduit le canal Shopify brut en libellé français, jamais l'identifiant technique", () => {
+    const ligneCanalBrut = { ...ligne, canal: "quick_sale" };
+    const csv = genererCSV([ligneCanalBrut]);
+    const ligneCSV = csv.split("\r\n")[1];
+
+    expect(ligneCSV).toContain("Point de vente (vente rapide)");
+    expect(ligneCSV).not.toContain("quick_sale");
+  });
 });

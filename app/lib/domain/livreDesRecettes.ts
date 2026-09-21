@@ -53,6 +53,27 @@ export function libelleModeReglement(valeurStockee: string): string {
   );
 }
 
+const LIBELLES_CANAL: Record<string, string> = {
+  web: "Boutique en ligne",
+  pos: "Point de vente",
+  iphone: "Point de vente (iPhone)",
+  android: "Point de vente (Android)",
+  quick_sale: "Point de vente (vente rapide)",
+  shopify_draft_order: "Commande brouillon",
+  shopify_draft_order_invoice: "Commande brouillon (facture payée)",
+};
+
+/**
+ * Traduit le `sourceName` brut renvoyé par Shopify (ex. "quick_sale",
+ * "shopify_draft_order") en libellé affichable — jamais stocké traduit (`canal` en
+ * base reste toujours la valeur brute Shopify), donc traduit uniquement à
+ * l'affichage, comme `libelleModeReglement`. Une valeur inconnue (nouveau canal de
+ * vente non répertorié) ressort inchangée plutôt que de faire planter l'affichage.
+ */
+export function libelleCanal(valeurStockee: string): string {
+  return LIBELLES_CANAL[valeurStockee] ?? valeurStockee;
+}
+
 /**
  * Construit les lignes du livre des recettes pour une commande Shopify, en appliquant
  * les règles CONFORMITÉ décidées en Phase 1 (docs/phase-1-verification.md, section B) :

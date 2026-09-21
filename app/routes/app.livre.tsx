@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { authenticate } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
-import { libelleModeReglement, LIBELLES_NATURE } from "../lib/domain/livreDesRecettes";
+import { libelleCanal, libelleModeReglement, LIBELLES_NATURE } from "../lib/domain/livreDesRecettes";
 import { periodeCourante } from "../lib/domain/periode";
 import { debutDeJourParis, finDeJourParis, parseDateISO } from "../lib/domain/fuseauParis";
 import { MentionLegale } from "../lib/ui/MentionLegale";
@@ -208,7 +208,7 @@ export default function LivreDesRecettes() {
                     </s-stack>
                   </s-table-cell>
                   <s-table-cell>{libelleModeReglement(ligne.modeReglement)}</s-table-cell>
-                  <s-table-cell>{ligne.canal}</s-table-cell>
+                  <s-table-cell>{libelleCanal(ligne.canal)}</s-table-cell>
                   <s-table-cell>
                     <s-text tone={ligne.montant < 0 ? "critical" : "success"} type="strong">
                       {formateurEUR.format(ligne.montant)}

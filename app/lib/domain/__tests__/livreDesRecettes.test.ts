@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculerCAPeriode, commandeEstDansPerimetre, construireLignesLivre } from "../livreDesRecettes";
+import { calculerCAPeriode, commandeEstDansPerimetre, construireLignesLivre, libelleCanal } from "../livreDesRecettes";
 import { niveauAlertePlafond, plafondAnnuel } from "../reglementation";
 import type { CommandeShopify } from "../types";
 
@@ -230,6 +230,18 @@ describe("commandeEstDansPerimetre", () => {
       : [];
 
     expect(lignes).toHaveLength(0);
+  });
+});
+
+describe("libelleCanal", () => {
+  it("traduit les canaux de vente Shopify connus en français", () => {
+    expect(libelleCanal("web")).toBe("Boutique en ligne");
+    expect(libelleCanal("quick_sale")).toBe("Point de vente (vente rapide)");
+    expect(libelleCanal("shopify_draft_order")).toBe("Commande brouillon");
+  });
+
+  it("laisse inchangée une valeur non répertoriée plutôt que de planter", () => {
+    expect(libelleCanal("un_canal_inconnu")).toBe("un_canal_inconnu");
   });
 });
 
