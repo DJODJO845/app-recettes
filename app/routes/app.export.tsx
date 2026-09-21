@@ -2,9 +2,11 @@ import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
+import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 import { CercleIcone } from "../lib/ui/CercleIcone";
+import { libelleDernierExport } from "../lib/ui/dateRelative";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -14,7 +16,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // recalcule nous-mêmes : c'est juste base64("{shop}/admin"), le format
   // que Shopify lui-même utilise (cf. sanitizeHost dans @shopify/shopify-api).
   const host = Buffer.from(`${session.shop}/admin`).toString("base64");
-  return { shop: session.shop, host };
+  const boutique = await obtenirOuCreerBoutique(session.shop);
+  return { shop: session.shop, host, derniereExportation: boutique.derniereExportation };
 };
 
 /**
@@ -72,7 +75,7 @@ function exporterPDF(shopify: ReturnType<typeof useAppBridge>, shop: string, hos
 }
 
 export default function Export() {
-  const { shop, host } = useLoaderData<typeof loader>();
+  const { shop, host, derniereExportation } = useLoaderData<typeof loader>();
   const shopify = useAppBridge();
 
   return (
@@ -86,6 +89,9 @@ export default function Export() {
 
       <s-section heading="Exporter votre livre des recettes">
         <s-stack direction="block" gap="base">
+          <s-text color="subdued">
+            {libelleDernierExport(derniereExportation ? new Date(derniereExportation) : null)}
+          </s-text>
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="base">
               <s-stack direction="inline" gap="small-300" alignItems="center">

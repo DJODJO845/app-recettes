@@ -11,6 +11,7 @@ import { REQUETE_DEVISE_BOUTIQUE, type DeviseBoutiqueResponse } from "../lib/sho
 import { plafondAnnuel, seuilsAlerte, type NiveauAlertePlafond } from "../lib/domain/reglementation";
 import { BanniereExport } from "../lib/ui/BanniereExport";
 import { TexteDepliable } from "../lib/ui/TexteDepliable";
+import { joursDepuis } from "../lib/ui/dateRelative";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { CercleIcone } from "../lib/ui/CercleIcone";
 import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
@@ -109,10 +110,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const dernieresLignes = await listerDernieresLignes(session.shop, NOMBRE_DERNIERES_RECETTES);
   const evolutionMensuelle = await calculerEvolutionMensuelle(session.shop, NOMBRE_MOIS_EVOLUTION);
 
-  const joursDepuisExport = boutique.derniereExportation
-    ? Math.floor((Date.now() - boutique.derniereExportation.getTime()) / (1000 * 60 * 60 * 24))
-    : null;
-  const doitRappelerExport = joursDepuisExport === null || joursDepuisExport >= JOURS_AVANT_RAPPEL_EXPORT;
+  const doitRappelerExport =
+    !boutique.derniereExportation || joursDepuis(boutique.derniereExportation) >= JOURS_AVANT_RAPPEL_EXPORT;
 
   return {
     totaux,
