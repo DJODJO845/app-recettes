@@ -88,8 +88,15 @@ export default function LivreDesRecettes() {
     [lignes, natureFiltre, modeFiltre],
   );
 
+  // Exclut les lignes où compteDansCA est faux (règlement par carte cadeau : l'argent
+  // a déjà été compté au moment de la vente de la carte, cf. construireLignesLivre) —
+  // même règle que calculerCAPeriode, sans quoi ce total afficherait un CA supérieur
+  // au vrai CA encaissé dès qu'une carte cadeau a été utilisée comme moyen de paiement.
   const total = useMemo(
-    () => lignesFiltrees.reduce((somme, ligne) => somme + ligne.montant, 0),
+    () =>
+      lignesFiltrees
+        .filter((ligne) => ligne.compteDansCA)
+        .reduce((somme, ligne) => somme + ligne.montant, 0),
     [lignesFiltrees],
   );
 
