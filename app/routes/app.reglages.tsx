@@ -78,7 +78,13 @@ export default function Reglages() {
     <s-page heading="Réglages">
       <s-section heading="Votre activité">
         <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
-          <fetcher.Form method="post">
+          {/* data-save-bar : barre native App Bridge ("Enregistrer"/"Annuler"), affichée
+              automatiquement en haut de l'app dès qu'un champ change — remplace le bouton
+              "Enregistrer" custom (retiré ci-dessous) pour un rendu natif Shopify Admin,
+              cohérent avec ce que Shopify recommande pour ce genre de formulaire de
+              réglages. data-discard-confirmation : demande confirmation avant d'annuler
+              des modifications non enregistrées. */}
+          <fetcher.Form method="post" data-save-bar data-discard-confirmation>
             <s-stack direction="block" gap="base">
               <s-stack direction="inline" gap="small-300" alignItems="center">
                 <CercleIcone type="business-entity" tone="info" fond="#E1F0FA" />
@@ -132,15 +138,6 @@ export default function Reglages() {
                 defaultValue={boutique.emailRappel ?? ""}
                 details="Laisser vide pour utiliser l'email de votre compte Shopify"
               />
-
-              <s-button
-                type="submit"
-                variant="primary"
-                icon="save"
-                loading={fetcher.state !== "idle" ? true : undefined}
-              >
-                Enregistrer
-              </s-button>
             </s-stack>
           </fetcher.Form>
         </s-box>
