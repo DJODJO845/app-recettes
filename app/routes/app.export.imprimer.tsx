@@ -4,6 +4,7 @@ import { listerLignes } from "../lib/db/lignesLivre.server";
 import { enregistrerExportation } from "../lib/db/boutique.server";
 import { LIBELLES_NATURE, libelleModeReglement } from "../lib/domain/livreDesRecettes";
 import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
+import { echapperHTML } from "../lib/ui/html";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -19,10 +20,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       (ligne) => `
         <tr>
           <td>${formateurDate.format(new Date(ligne.date))}</td>
-          <td>${ligne.reference}</td>
-          <td>${ligne.client}</td>
+          <td>${echapperHTML(ligne.reference)}</td>
+          <td>${echapperHTML(ligne.client)}</td>
           <td>${LIBELLES_NATURE[ligne.nature]}</td>
-          <td>${libelleModeReglement(ligne.modeReglement)}</td>
+          <td>${echapperHTML(libelleModeReglement(ligne.modeReglement))}</td>
           <td style="text-align:right">${formateurEUR.format(ligne.montant)}</td>
         </tr>
       `,

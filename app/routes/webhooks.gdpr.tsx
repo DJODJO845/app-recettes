@@ -5,6 +5,7 @@ import { envoyerEmail } from "../lib/email/resend.server";
 import { depotPrisma } from "../lib/webhooks/gdprPrisma.server";
 import type { LigneLivreDesRecettes } from "../lib/domain/types";
 import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
+import { echapperHTML } from "../lib/ui/html";
 import {
   traiterDemandeDonneesClient,
   traiterEffacementBoutique,
@@ -95,13 +96,27 @@ async function notifierMarchandDemandeDonnees(
   }
   if (!email) return;
 
-  const recap =
+  const recapTexte =
     lignes.length === 0
       ? "Aucune ligne du livre des recettes n'est associée à ce client."
       : lignes
           .map(
             (ligne) =>
               `- ${formateurDate.format(new Date(ligne.date))} · ${ligne.reference} · ${formateurEUR.format(ligne.montant)}`,
+          )
+          .join("\n");
+
+  // Version HTML séparée (référence échappée) : le nom du client n'est pas encore
+  // récupéré (voir mapper.server.ts), mais `ligne.reference` peut un jour porter du
+  // texte non maîtrisé — mieux vaut échapper dès maintenant plutôt que d'oublier une
+  // fois les noms de clients activés (voir aussi app.export.imprimer.tsx).
+  const recapHTML =
+    lignes.length === 0
+      ? "Aucune ligne du livre des recettes n'est associée à ce client."
+      : lignes
+          .map(
+            (ligne) =>
+              `- ${formateurDate.format(new Date(ligne.date))} · ${echapperHTML(ligne.reference)} · ${formateurEUR.format(ligne.montant)}`,
           )
           .join("\n");
 
@@ -112,11 +127,11 @@ async function notifierMarchandDemandeDonnees(
       `Un client (identifiant Shopify ${clientId}) a demandé, via Shopify, l'accès aux ` +
       `données que votre app « Recettes URSSAF » détient sur lui.\n\n` +
       `Vous devez lui transmettre ces informations dans le délai légal d'un mois (RGPD).\n\n` +
-      `Lignes du livre des recettes concernées :\n${recap}`,
+      `Lignes du livre des recettes concernées :\n${recapTexte}`,
     html:
-      `<p>Un client (identifiant Shopify <code>${clientId}</code>) a demandé, via Shopify, ` +
+      `<p>Un client (identifiant Shopify <code>${echapperHTML(clientId)}</code>) a demandé, via Shopify, ` +
       `l'accès aux données que votre app « Recettes URSSAF » détient sur lui.</p>` +
       `<p>Vous devez lui transmettre ces informations dans le délai légal d'un mois (RGPD).</p>` +
-      `<p>Lignes du livre des recettes concernées :</p><pre>${recap}</pre>`,
+      `<p>Lignes du livre des recettes concernées :</p><pre>${recapHTML}</pre>`,
   });
 }
