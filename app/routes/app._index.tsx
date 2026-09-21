@@ -216,11 +216,15 @@ export default function Dashboard() {
             <div style={{ position: "absolute", left: `${pourcentageAvertissement}%`, top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.25)" }} />
             <div style={{ position: "absolute", left: `${pourcentageCritique}%`, top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.25)" }} />
           </div>
+          {/* 2 éléments alignés sur les bornes de la jauge (0 € à gauche, plafond à droite) plutôt
+              que 3 en une seule ligne : sur un écran étroit, 3 éléments "space-between" ne tiennent
+              pas et le dernier se retrouve seul sur une 2e ligne, décroché du bord droit de la barre
+              qu'il est censé légender. */}
           <s-stack direction="inline" justifyContent="space-between">
             <s-text color="subdued">0 €</s-text>
-            <s-text color="subdued">Seuils d&apos;alerte : {pourcentageAvertissement} % et {pourcentageCritique} %</s-text>
             <s-text color="subdued">{formateurEUR.format(plafond)}</s-text>
           </s-stack>
+          <s-text color="subdued">Seuils d&apos;alerte : {pourcentageAvertissement} % et {pourcentageCritique} %</s-text>
           {typeActivite === "MIXTE" && (
             <s-banner tone="info">
               <s-paragraph>
