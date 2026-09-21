@@ -157,17 +157,6 @@ export default function Dashboard() {
         </s-banner>
       )}
 
-      {doitRappelerExport && <BanniereExport />}
-
-      {totaux.caPeriodeCourante === 0 && (
-        <s-banner tone="info">
-          <s-paragraph>
-            Aucun encaissement sur cette période. Une déclaration à 0 € reste
-            obligatoire auprès de l&apos;URSSAF.
-          </s-paragraph>
-        </s-banner>
-      )}
-
       <s-section>
         <s-grid gridTemplateColumns="@container (inline-size < 28rem) 1fr, 1fr 1fr" gap="base">
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
@@ -202,6 +191,17 @@ export default function Dashboard() {
           </s-box>
         </s-grid>
       </s-section>
+
+      {totaux.caPeriodeCourante === 0 && (
+        <s-banner tone="info">
+          <s-paragraph>
+            Aucun encaissement sur cette période. Une déclaration à 0 € reste
+            obligatoire auprès de l&apos;URSSAF.
+          </s-paragraph>
+        </s-banner>
+      )}
+
+      {doitRappelerExport && <BanniereExport />}
 
       <s-section heading="Jauge du plafond annuel">
         <s-stack direction="block" gap="base">
