@@ -27,12 +27,20 @@ export const REQUETE_COMMANDES_RECENTES = `#graphql
         id
         name
         sourceName
-        # 250 (le maximum autorisé par Shopify pour ce type de champ) plutôt qu'une
-        # petite valeur arbitraire : avec 10 par exemple, une commande à plus de 10
-        # articles dont la carte cadeau serait le 11e ou au-delà aurait été mal
-        # étiquetée "vente" au lieu de "vente de carte cadeau" (n'affecte que le
-        # libellé affiché, pas le CA compté — les deux comptent dans le CA encaissé).
-        lineItems(first: 250) {
+        # ATTENTION coût de requête : lineItems est imbriqué DANS orders(first: 25), donc
+        # le coût calculé par l'API Admin de Shopify (basé sur les arguments "first" des
+        # connexions, PAS sur le nombre réel de résultats — donc même une boutique avec
+        # peu de commandes est concernée) multiplie ces deux valeurs. Une valeur déjà
+        # tentée ici (250) donnait 25 × 250 ≈ 6250 points rien que pour ce champ, largement
+        # au-delà du seau de la limitation de débit de Shopify (1000-2000 points) : la
+        # requête entière aurait été rejetée (coût maximum dépassé) à CHAQUE import, sur
+        # TOUTE boutique — un échec bien plus grave que le problème cosmétique que 250
+        # visait à corriger. 10 reste un compromis raisonnable : une commande à plus de 10
+        # articles dont la carte cadeau serait le 11e ou au-delà serait mal étiquetée
+        # "vente" au lieu de "vente de carte cadeau" (n'affecte que le libellé affiché, pas
+        # le CA compté — les deux comptent dans le CA encaissé), un risque bien moindre
+        # qu'une requête d'import systématiquement rejetée.
+        lineItems(first: 10) {
           nodes {
             isGiftCard
           }
