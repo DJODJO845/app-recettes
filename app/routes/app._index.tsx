@@ -151,8 +151,8 @@ export default function Dashboard() {
       {deviseBoutique !== "EUR" && (
         <s-banner tone="critical" heading="Boutique configurée hors euros">
           <TexteDepliable
-            premierePhrase={`Votre boutique Shopify utilise la devise ${deviseBoutique}, pas l'euro.`}
-            reste="Tous les montants affichés dans cette app sont pourtant présentés en euros (€) : ils ne correspondent donc pas à votre CA réel en EUR. Ne déclarez pas ces chiffres à l'URSSAF tant que ce point n'est pas résolu."
+            premierePhrase={`Votre boutique Shopify utilise la devise ${deviseBoutique}, pas l'euro : changez la devise de votre boutique pour que cette app redevienne fiable.`}
+            reste={`Les montants affichés ici sont pourtant présentés avec un symbole "€" : en réalité, ce sont des montants en ${deviseBoutique}, pas en euros, et l'URSSAF exige une déclaration en euros. Ne les déclarez pas tels quels. Pour corriger : dans les réglages Shopify (Réglages > Général > Devise de la boutique), passez la devise en EUR — les nouvelles ventes seront alors correctement comptées ici. Ce changement ne convertit pas les ventes déjà passées en ${deviseBoutique} : pour celles-ci, calculez vous-même leur équivalent en euros au taux de change du jour de l'encaissement avant de les déclarer.`}
           />
         </s-banner>
       )}
