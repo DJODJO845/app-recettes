@@ -8,7 +8,7 @@ import { calculerTotauxDashboard, calculerEvolutionMensuelle } from "../lib/db/t
 import { listerDernieresLignes } from "../lib/db/lignesLivre.server";
 import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.server";
 import { REQUETE_DEVISE_BOUTIQUE, type DeviseBoutiqueResponse } from "../lib/shopify/graphql";
-import { plafondAnnuel, type NiveauAlertePlafond } from "../lib/domain/reglementation";
+import { plafondAnnuel, seuilsAlerte, type NiveauAlertePlafond } from "../lib/domain/reglementation";
 import { BanniereExport } from "../lib/ui/BanniereExport";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { CercleIcone } from "../lib/ui/CercleIcone";
@@ -97,6 +97,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const plafond = plafondAnnuel(boutique.typeActivite.toLowerCase() as "commerce" | "services" | "mixte");
   const plafondServices = plafondAnnuel("services");
   const pourcentagePlafond = Math.min(100, Math.round((totaux.caAnnuelEncaisse / plafond) * 100));
+  // Lus depuis config/reglementation.json (jamais codés en dur, cf. reglementation.ts) :
+  // les repères de la jauge doivent toujours correspondre exactement aux seuils qui
+  // déterminent totaux.niveauAlerte, sans quoi un changement de seuil dans la config
+  // désynchroniserait silencieusement l'affichage (repères/texte) du vrai niveau d'alerte.
+  const seuils = seuilsAlerte();
+  const pourcentageAvertissement = Math.round(seuils.avertissement * 100);
+  const pourcentageCritique = Math.round(seuils.critique * 100);
 
   const dernieresLignes = await listerDernieresLignes(session.shop, NOMBRE_DERNIERES_RECETTES);
   const evolutionMensuelle = await calculerEvolutionMensuelle(session.shop, NOMBRE_MOIS_EVOLUTION);
@@ -116,6 +123,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     doitRappelerExport,
     typeActivite: boutique.typeActivite,
     deviseBoutique,
+    pourcentageAvertissement,
+    pourcentageCritique,
   };
 };
 
@@ -130,6 +139,8 @@ export default function Dashboard() {
     doitRappelerExport,
     typeActivite,
     deviseBoutique,
+    pourcentageAvertissement,
+    pourcentageCritique,
   } = useLoaderData<typeof loader>();
   const badge = BADGE_ALERTE[totaux.niveauAlerte];
   const maxEvolution = Math.max(...evolutionMensuelle.map((point) => point.ca), 1);
@@ -205,12 +216,12 @@ export default function Dashboard() {
                 transition: "width 0.3s ease",
               }}
             />
-            <div style={{ position: "absolute", left: "80%", top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.25)" }} />
-            <div style={{ position: "absolute", left: "95%", top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.25)" }} />
+            <div style={{ position: "absolute", left: `${pourcentageAvertissement}%`, top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.25)" }} />
+            <div style={{ position: "absolute", left: `${pourcentageCritique}%`, top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.25)" }} />
           </div>
           <s-stack direction="inline" justifyContent="space-between">
             <s-text color="subdued">0 €</s-text>
-            <s-text color="subdued">Seuils d&apos;alerte : 80 % et 95 %</s-text>
+            <s-text color="subdued">Seuils d&apos;alerte : {pourcentageAvertissement} % et {pourcentageCritique} %</s-text>
             <s-text color="subdued">{formateurEUR.format(plafond)}</s-text>
           </s-stack>
           {typeActivite === "MIXTE" && (
@@ -227,7 +238,7 @@ export default function Dashboard() {
           {totaux.niveauAlerte === "avertissement" && (
             <s-banner tone="warning">
               <s-paragraph>
-                Vous approchez du plafond annuel (80 %). Le dépasser peut remettre
+                Vous approchez du plafond annuel ({pourcentageAvertissement} %). Le dépasser peut remettre
                 en cause votre régime micro-entrepreneur : anticipez avec un
                 expert-comptable si vous pensez le dépasser cette année.
               </s-paragraph>
@@ -239,7 +250,7 @@ export default function Dashboard() {
           {totaux.niveauAlerte === "critique" && (
             <s-banner tone="critical">
               <s-paragraph>
-                Attention, vous dépassez 95 % du plafond annuel. Rapprochez-vous d&apos;un
+                Attention, vous dépassez {pourcentageCritique} % du plafond annuel. Rapprochez-vous d&apos;un
                 expert-comptable ou de l&apos;URSSAF rapidement.
               </s-paragraph>
               <s-button slot="primary-action" href="https://www.autoentrepreneur.urssaf.fr" target="_blank">
