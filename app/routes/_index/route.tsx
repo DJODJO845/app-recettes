@@ -1,9 +1,11 @@
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { redirect, Form, useLoaderData } from "react-router";
 
 import { login } from "../../shopify.server";
 
 import styles from "./styles.module.css";
+
+export const meta: MetaFunction = () => [{ title: "Recettes URSSAF" }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -21,7 +23,7 @@ export default function App() {
   return (
     <div className={styles.index}>
       <div className={styles.content}>
-        <h1 className={styles.heading}>Livre des recettes & URSSAF</h1>
+        <h1 className={styles.heading}>Recettes URSSAF</h1>
         <p className={styles.text}>
           Le livre des recettes de votre micro-entreprise généré automatiquement, et
           le montant exact de chiffre d&apos;affaires encaissé à déclarer chaque
