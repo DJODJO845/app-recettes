@@ -201,8 +201,6 @@ export default function Dashboard() {
         </s-banner>
       )}
 
-      {doitRappelerExport && <BanniereExport />}
-
       <s-section heading="Jauge du plafond annuel">
         <s-stack direction="block" gap="base">
           <div style={{ position: "relative", height: "16px", width: "100%", background: "#E1E3E5", borderRadius: "8px", overflow: "hidden" }}>
@@ -322,6 +320,8 @@ export default function Dashboard() {
           </s-stack>
         )}
       </s-section>
+
+      {doitRappelerExport && <BanniereExport />}
 
       <MentionLegale />
     </s-page>
