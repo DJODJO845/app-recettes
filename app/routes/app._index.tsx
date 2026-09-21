@@ -10,6 +10,7 @@ import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.serv
 import { REQUETE_DEVISE_BOUTIQUE, type DeviseBoutiqueResponse } from "../lib/shopify/graphql";
 import { plafondAnnuel, seuilsAlerte, type NiveauAlertePlafond } from "../lib/domain/reglementation";
 import { BanniereExport } from "../lib/ui/BanniereExport";
+import { TexteDepliable } from "../lib/ui/TexteDepliable";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { CercleIcone } from "../lib/ui/CercleIcone";
 import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
@@ -149,12 +150,10 @@ export default function Dashboard() {
     <s-page heading="Tableau de bord">
       {deviseBoutique !== "EUR" && (
         <s-banner tone="critical" heading="Boutique configurée hors euros">
-          <s-paragraph>
-            Votre boutique Shopify utilise la devise {deviseBoutique}, pas l&apos;euro.
-            Tous les montants affichés dans cette app sont pourtant présentés en euros
-            (€) : ils ne correspondent donc pas à votre CA réel en EUR. Ne déclarez pas
-            ces chiffres à l&apos;URSSAF tant que ce point n&apos;est pas résolu.
-          </s-paragraph>
+          <TexteDepliable
+            premierePhrase={`Votre boutique Shopify utilise la devise ${deviseBoutique}, pas l'euro.`}
+            reste="Tous les montants affichés dans cette app sont pourtant présentés en euros (€) : ils ne correspondent donc pas à votre CA réel en EUR. Ne déclarez pas ces chiffres à l'URSSAF tant que ce point n'est pas résolu."
+          />
         </s-banner>
       )}
 
