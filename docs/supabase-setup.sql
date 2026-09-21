@@ -1,3 +1,16 @@
+-- Script de mise en place complet, pour un projet Supabase Postgres TOUT NEUF.
+-- Équivalent consolidé de prisma/migrations/0001_init à 0006_derniere_importation
+-- + prisma/rls.sql, à jour avec prisma/schema.prisma. Si ce fichier et
+-- prisma/schema.prisma divergent un jour, schema.prisma fait foi : mettre à jour
+-- ce script en conséquence (voir aussi prisma/migrations/, qui documente
+-- l'historique colonne par colonne).
+--
+-- Ne PAS utiliser sur une base qui a déjà des tables Boutique/LigneLivre/session :
+-- ce script n'est pas idempotent (pas de IF NOT EXISTS sur les CREATE TABLE/TYPE),
+-- volontairement, pour une base neuve uniquement. Pour rattraper une base existante
+-- créée avant une colonne donnée, rejouer plutôt la migration idempotente
+-- correspondante dans prisma/migrations/.
+
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
@@ -17,6 +30,9 @@ CREATE TABLE "Boutique" (
     "typeActivite" "TypeActivite" NOT NULL DEFAULT 'COMMERCE',
     "periodicite" "Periodicite" NOT NULL DEFAULT 'TRIMESTRIELLE',
     "dateDebutActivite" TIMESTAMP(3) NOT NULL,
+    "emailRappel" TEXT,
+    "derniereExportation" TIMESTAMP(3),
+    "derniereImportation" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -31,6 +47,7 @@ CREATE TABLE "LigneLivre" (
     "dateEncaissement" TIMESTAMP(3) NOT NULL,
     "reference" TEXT NOT NULL,
     "client" TEXT NOT NULL,
+    "clientId" TEXT,
     "nature" "NatureLigne" NOT NULL,
     "montant" DECIMAL(12,2) NOT NULL,
     "modeReglement" TEXT NOT NULL,
@@ -44,7 +61,13 @@ CREATE TABLE "LigneLivre" (
 );
 
 -- CreateTable
-CREATE TABLE "Session" (
+-- Nom en minuscules, non entre guillemets mixtes : schema.prisma mappe le modèle
+-- Session vers la table physique "session" (@@map("session")), et
+-- @shopify/shopify-app-session-storage-prisma s'attend à ce nom exact. Une table
+-- créée "Session" (majuscule, entre guillemets) serait un identifiant Postgres
+-- différent de "session" et casserait l'authentification dès la première requête
+-- ("relation session does not exist").
+CREATE TABLE "session" (
     "id" TEXT NOT NULL,
     "shop" TEXT NOT NULL,
     "state" TEXT NOT NULL,
@@ -53,8 +76,17 @@ CREATE TABLE "Session" (
     "expires" TIMESTAMP(3),
     "accessToken" TEXT NOT NULL,
     "userId" BIGINT,
+    "firstName" TEXT,
+    "lastName" TEXT,
+    "email" TEXT,
+    "accountOwner" BOOLEAN DEFAULT false,
+    "locale" TEXT,
+    "collaborator" BOOLEAN DEFAULT false,
+    "emailVerified" BOOLEAN DEFAULT false,
+    "refreshToken" TEXT,
+    "refreshTokenExpires" TIMESTAMP(3),
 
-    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "session_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -65,6 +97,9 @@ CREATE UNIQUE INDEX "LigneLivre_transactionId_key" ON "LigneLivre"("transactionI
 
 -- CreateIndex
 CREATE INDEX "LigneLivre_shopDomain_dateEncaissement_idx" ON "LigneLivre"("shopDomain", "dateEncaissement");
+
+-- CreateIndex
+CREATE INDEX "LigneLivre_shopDomain_clientId_idx" ON "LigneLivre"("shopDomain", "clientId");
 
 -- AddForeignKey
 ALTER TABLE "LigneLivre" ADD CONSTRAINT "LigneLivre_shopDomain_fkey" FOREIGN KEY ("shopDomain") REFERENCES "Boutique"("shopDomain") ON DELETE RESTRICT ON UPDATE CASCADE;

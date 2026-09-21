@@ -44,7 +44,11 @@ CREATE TABLE "LigneLivre" (
 );
 
 -- CreateTable
-CREATE TABLE "Session" (
+-- Nom en minuscules ("session", pas "Session") : schema.prisma mappe le modèle
+-- Session vers cette table physique via @@map("session"), attendu tel quel par
+-- @shopify/shopify-app-session-storage-prisma. Voir docs/supabase-setup.sql pour
+-- l'explication complète.
+CREATE TABLE "session" (
     "id" TEXT NOT NULL,
     "shop" TEXT NOT NULL,
     "state" TEXT NOT NULL,
@@ -54,7 +58,7 @@ CREATE TABLE "Session" (
     "accessToken" TEXT NOT NULL,
     "userId" BIGINT,
 
-    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "session_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
