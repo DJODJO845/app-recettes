@@ -147,6 +147,17 @@ export default function Dashboard() {
 
   return (
     <s-page heading="Tableau de bord">
+      {/* Les composants Polaris (s-box, s-text...) s'adaptent seuls au mode sombre de
+          l'Admin Shopify, mais pas les quelques éléments custom ci-dessous (jauge,
+          graphique) qui utilisent des couleurs codées en dur : sans ça, par exemple, les
+          traits de seuil de la jauge (noir semi-transparent, pensés pour un fond clair)
+          deviendraient quasi invisibles sur un fond sombre. */}
+      <style>{`
+        :root { --piste-jauge: #E1E3E5; --repere-jauge: rgba(0,0,0,0.35); --barre-graphique-passee: #B4E0D3; }
+        @media (prefers-color-scheme: dark) {
+          :root { --piste-jauge: #4A4E54; --repere-jauge: rgba(255,255,255,0.45); --barre-graphique-passee: #2E5F4E; }
+        }
+      `}</style>
       {deviseBoutique !== "EUR" && (
         <s-banner tone="critical" heading="Boutique configurée hors euros">
           <TexteDepliable
@@ -202,7 +213,7 @@ export default function Dashboard() {
 
       <s-section heading="Jauge du plafond annuel">
         <s-stack direction="block" gap="base">
-          <div style={{ position: "relative", height: "16px", width: "100%", background: "#E1E3E5", borderRadius: "8px", overflow: "hidden" }}>
+          <div style={{ position: "relative", height: "16px", width: "100%", background: "var(--piste-jauge)", borderRadius: "8px", overflow: "hidden" }}>
             <div
               style={{
                 height: "100%",
@@ -212,8 +223,8 @@ export default function Dashboard() {
                 transition: "width 0.3s ease",
               }}
             />
-            <div style={{ position: "absolute", left: `${pourcentageAvertissement}%`, top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.25)" }} />
-            <div style={{ position: "absolute", left: `${pourcentageCritique}%`, top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.25)" }} />
+            <div style={{ position: "absolute", left: `${pourcentageAvertissement}%`, top: 0, bottom: 0, width: "2px", background: "var(--repere-jauge)" }} />
+            <div style={{ position: "absolute", left: `${pourcentageCritique}%`, top: 0, bottom: 0, width: "2px", background: "var(--repere-jauge)" }} />
           </div>
           {/* 2 éléments alignés sur les bornes de la jauge (0 € à gauche, plafond à droite) plutôt
               que 3 en une seule ligne : sur un écran étroit, 3 éléments "space-between" ne tiennent
@@ -282,7 +293,7 @@ export default function Dashboard() {
                     maxWidth: "40px",
                     height: `${hauteur}px`,
                     borderRadius: "4px 4px 0 0",
-                    background: estMoisCourant ? COULEUR_ALERTE.ok : "#B4E0D3",
+                    background: estMoisCourant ? COULEUR_ALERTE.ok : "var(--barre-graphique-passee)",
                     transition: "height 0.3s ease",
                   }}
                 />
