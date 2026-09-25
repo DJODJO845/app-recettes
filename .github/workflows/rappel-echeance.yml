@@ -13,7 +13,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Appeler le endpoint de rappel d'échéance
+        # Ré-essais : le plan gratuit Render met le service en veille après 15 min
+        # d'inactivité, et le réveil prend 30-60s. Sans ré-essai, un premier appel
+        # tombant sur un service endormi échoue (503) et aucun rappel n'est envoyé
+        # ce jour-là, silencieusement pour le marchand (seul un email GitHub Actions
+        # en informe le développeur). --max-time borne chaque tentative individuelle
+        # (auparavant, sans cette option, une tentative pouvait rester bloquée
+        # plusieurs minutes avant d'échouer, comme observé).
         run: |
-          curl --fail --show-error --silent \
-            -X POST "${{ secrets.APP_URL }}/api/cron/rappels-echeance" \
-            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
+          for tentative in 1 2 3 4; do
+            if curl --fail --show-error --silent --max-time 90 \
+              -X POST "${{ secrets.APP_URL }}/api/cron/rappels-echeance" \
+              -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"; then
+              exit 0
+            fi
+            echo "Tentative $tentative échouée (le service était peut-être encore en train de démarrer), nouvel essai dans 30s..."
+            sleep 30
+          done
+          echo "Échec après 4 tentatives."
+          exit 1
