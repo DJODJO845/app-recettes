@@ -7,6 +7,17 @@ import { authenticateAdmin, FORFAIT_MENSUEL } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
+/**
+ * Origine publique réelle (https://...) d'une requête passée par un proxy TLS-
+ * terminating comme Render : request.url seul reflète le protocole vu par Node en
+ * interne (http), pas celui utilisé par le navigateur — d'où X-Forwarded-Proto.
+ */
+function origineReelle(request: Request): string {
+  const protocole = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const { host } = new URL(request.url);
+  return protocole ? `${protocole}://${host}` : new URL(request.url).origin;
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, billing } = await authenticateAdmin(request);
   await obtenirOuCreerBoutique(session.shop);
@@ -32,11 +43,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         billing.request({
           plan: FORFAIT_MENSUEL,
           isTest: !facturationReelle,
-          // Calculé depuis la requête elle-même plutôt que depuis
-          // SHOPIFY_APP_URL : si cette variable est absente ou mal configurée
-          // sur l'hébergeur, Shopify reçoit une returnUrl invalide et affiche
-          // une erreur générique sur la page d'approbation de l'abonnement.
-          returnUrl: `${new URL(request.url).origin}/app`,
+          // Calculé depuis la requête elle-même plutôt que depuis SHOPIFY_APP_URL
+          // (cf. commentaire historique), mais en respectant X-Forwarded-Proto :
+          // Render termine le HTTPS en amont et transmet en HTTP en interne, donc
+          // `new URL(request.url).origin` seul renvoie "http://..." — Shopify
+          // renvoie alors le navigateur vers cette URL en clair après l'approbation,
+          // bloquée par Android (ERR_CLEARTEXT_NOT_PERMITTED, vu en review le 6
+          // octobre 2026 lors du test réel de l'écran d'approbation d'abonnement).
+          returnUrl: `${origineReelle(request)}/app`,
         }),
     });
   } catch (erreur) {
