@@ -3,7 +3,7 @@ import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useEffect } from "react";
 
-import { authenticate, FORFAIT_MENSUEL } from "../shopify.server";
+import { authenticateAdmin, FORFAIT_MENSUEL } from "../shopify.server";
 import { obtenirOuCreerBoutique, mettreAJourReglages } from "../lib/db/boutique.server";
 import { plafondAnnuel } from "../lib/domain/reglementation";
 import { dateISOParis, debutDeJourParis, parseDateISO } from "../lib/domain/fuseauParis";
@@ -12,7 +12,7 @@ import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 import { CercleIcone } from "../lib/ui/CercleIcone";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, billing } = await authenticate.admin(request);
+  const { session, billing } = await authenticateAdmin(request);
   const boutique = await obtenirOuCreerBoutique(session.shop);
 
   // `billing.check()` ne redirige jamais (contrairement à `billing.require()` dans
@@ -29,7 +29,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateAdmin(request);
   const data = await request.formData();
 
   const emailRappelBrut = String(data.get("emailRappel") ?? "").trim();

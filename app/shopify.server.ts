@@ -53,3 +53,22 @@ export const unauthenticated = shopify.unauthenticated;
 export const login = shopify.login;
 export const registerWebhooks = shopify.registerWebhooks;
 export const sessionStorage = shopify.sessionStorage;
+
+/**
+ * À utiliser à la place de authenticate.admin(request) dans TOUTES les routes /app/*.
+ * authenticate.admin() lève un Response pour les redirections légitimes (OAuth,
+ * facturation) — à laisser remonter tel quel — mais peut aussi lever une exception
+ * brute (host/shop malformé, erreur réseau pendant l'échange de token...). Sans ce
+ * filet, une telle exception sort du contexte Shopify embarqué et atterrit sur la
+ * page générique hors cadre de root.tsx (plusieurs cas vus en review le 6 octobre
+ * 2026, sur des routes différentes à chaque fois — d'où ce point d'entrée unique
+ * plutôt qu'un try/catch dupliqué dans chaque fichier de route).
+ */
+export async function authenticateAdmin(request: Request) {
+  try {
+    return await authenticate.admin(request);
+  } catch (erreur) {
+    if (erreur instanceof Response) throw erreur;
+    throw new Response("Paramètres de requête invalides", { status: 400 });
+  }
+}

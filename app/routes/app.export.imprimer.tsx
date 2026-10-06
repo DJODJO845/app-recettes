@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from "react-router";
-import { authenticate } from "../shopify.server";
+import { authenticateAdmin } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { enregistrerExportation } from "../lib/db/boutique.server";
 import { LIBELLES_NATURE, libelleModeReglement } from "../lib/domain/livreDesRecettes";
@@ -7,7 +7,7 @@ import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
 import { echapperHTML } from "../lib/ui/html";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateAdmin(request);
   const lignes = await listerLignes(session.shop);
   await enregistrerExportation(session.shop);
 

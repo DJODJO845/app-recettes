@@ -1,11 +1,11 @@
 import type { LoaderFunctionArgs } from "react-router";
-import { authenticate } from "../shopify.server";
+import { authenticateAdmin } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { enregistrerExportation } from "../lib/db/boutique.server";
 import { genererCSV } from "../lib/export/csv";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateAdmin(request);
   const lignes = await listerLignes(session.shop);
   const csv = genererCSV(lignes);
   await enregistrerExportation(session.shop);

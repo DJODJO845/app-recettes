@@ -1,7 +1,7 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { authenticate } from "../shopify.server";
+import { authenticateAdmin } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
@@ -9,7 +9,7 @@ import { CercleIcone } from "../lib/ui/CercleIcone";
 import { libelleDernierExport } from "../lib/ui/dateRelative";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateAdmin(request);
   // Le paramètre `host` de l'URL ne survit pas toujours à la navigation
   // React Router entre les pages de l'app (confirmé par les logs Render :
   // `host=` vide sur /app/export/csv). Plutôt que d'en dépendre, on le

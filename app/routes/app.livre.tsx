@@ -1,7 +1,7 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useSearchParams } from "react-router";
 import { useMemo, useRef, useState } from "react";
-import { authenticate } from "../shopify.server";
+import { authenticateAdmin } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import { libelleCanal, libelleModeReglement, LIBELLES_NATURE } from "../lib/domain/livreDesRecettes";
@@ -31,7 +31,7 @@ const BADGE_NATURE = {
 } as const satisfies Record<NatureLigneLivre, { tone: "success" | "info" | "critical"; icon: string }>;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateAdmin(request);
   const url = new URL(request.url);
   const debutParam = url.searchParams.get("debut");
   const finParam = url.searchParams.get("fin");

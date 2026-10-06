@@ -1,10 +1,10 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { authenticate } from "../shopify.server";
+import { authenticateAdmin } from "../shopify.server";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 import { CONTACT_EMAIL } from "../lib/ui/contact";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  await authenticateAdmin(request);
   return null;
 };
 

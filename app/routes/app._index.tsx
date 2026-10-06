@@ -2,7 +2,7 @@ import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
-import { authenticate } from "../shopify.server";
+import { authenticateAdmin } from "../shopify.server";
 import { obtenirOuCreerBoutique, enregistrerImportation } from "../lib/db/boutique.server";
 import { calculerTotauxDashboard, calculerEvolutionMensuelle } from "../lib/db/totaux.server";
 import { listerDernieresLignes } from "../lib/db/lignesLivre.server";
@@ -48,7 +48,7 @@ const BADGE_ALERTE = {
 } as const satisfies Record<NiveauAlertePlafond, { tone: "success" | "warning" | "critical"; label: string; icone: string }>;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin, session } = await authenticate.admin(request);
+  const { admin, session } = await authenticateAdmin(request);
   const boutique = await obtenirOuCreerBoutique(session.shop);
 
   // Import des commandes et vérification de la devise sont deux appels Shopify
