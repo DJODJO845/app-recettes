@@ -110,11 +110,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.error("Échec de la vérification de la devise de la boutique :", erreur, corpsReponse);
   }
 
-  const totaux = await calculerTotauxDashboard(
-    session.shop,
-    boutique.periodicite,
-    boutique.typeActivite,
-  );
+  // Trois lectures indépendantes (aucune ne dépend du résultat des autres) : les
+  // lancer en parallèle évite de payer trois fois l'aller-retour réseau vers Supabase
+  // (hébergé en Irlande, alors que Render tourne en Ohio — chaque requête compte).
+  const [totaux, dernieresLignes, evolutionMensuelle] = await Promise.all([
+    calculerTotauxDashboard(session.shop, boutique.periodicite, boutique.typeActivite),
+    listerDernieresLignes(session.shop, NOMBRE_DERNIERES_RECETTES),
+    calculerEvolutionMensuelle(session.shop, NOMBRE_MOIS_EVOLUTION),
+  ]);
 
   const plafond = plafondAnnuel(boutique.typeActivite.toLowerCase() as "commerce" | "services" | "mixte");
   const plafondServices = plafondAnnuel("services");
@@ -126,9 +129,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const seuils = seuilsAlerte();
   const pourcentageAvertissement = Math.round(seuils.avertissement * 100);
   const pourcentageCritique = Math.round(seuils.critique * 100);
-
-  const dernieresLignes = await listerDernieresLignes(session.shop, NOMBRE_DERNIERES_RECETTES);
-  const evolutionMensuelle = await calculerEvolutionMensuelle(session.shop, NOMBRE_MOIS_EVOLUTION);
 
   const doitRappelerExport =
     !boutique.derniereExportation || joursDepuis(boutique.derniereExportation) >= JOURS_AVANT_RAPPEL_EXPORT;
