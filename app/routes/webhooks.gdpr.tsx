@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs } from "react-router";
-import { authenticate, unauthenticated } from "../shopify.server";
+import { authenticateWebhook, unauthenticated } from "../shopify.server";
 import { obtenirOuCreerBoutique, supprimerBoutique } from "../lib/db/boutique.server";
 import { envoyerEmail } from "../lib/email/resend.server";
 import { depotPrisma } from "../lib/webhooks/gdprPrisma.server";
@@ -27,10 +27,13 @@ interface PayloadClient {
  * le savoir.
  */
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { topic, shop, payload } = await authenticate.webhook(request);
+  const { topic, shop, payload } = await authenticateWebhook(request);
   console.log(`Reçu webhook RGPD ${topic} pour ${shop}`);
 
-  const clientId = toGidClient((payload as PayloadClient).customer?.id);
+  // payload est absent si authenticateWebhook() est retombé sur le filet (échec du
+  // rafraîchissement de token) : CUSTOMERS_DATA_REQUEST/CUSTOMERS_REDACT ne pourront
+  // pas être traités dans ce cas précis (pas besoin de payload pour SHOP_REDACT).
+  const clientId = toGidClient((payload as PayloadClient | null)?.customer?.id);
 
   switch (topic) {
     case "CUSTOMERS_DATA_REQUEST": {

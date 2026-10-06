@@ -34,12 +34,15 @@ const shopify = shopifyApp({
       ],
     },
   },
-  // expiringOfflineAccessTokens désactivé : avec ce flag actif, authenticate.webhook()
-  // tente de rafraîchir le token offline dès qu'il approche de l'expiration, y compris
-  // pour app/uninstalled et shop/redact — qui arrivent justement au moment où Shopify
-  // vient de révoquer ce token. Le rafraîchissement échoue alors côté Shopify, et la
-  // librairie relance l'erreur sans que notre handler ne s'exécute (500 systématique,
-  // vu en review le 6 octobre 2026 sur ces deux webhooks).
+  // OBLIGATOIRE pour les apps publiques créées après le 1er avril 2026 (notre cas) :
+  // sans ce flag, Shopify demande un token offline classique (non expirant), que
+  // l'API Admin rejette désormais silencieusement — 403 vide ("GraphQL Client: ")
+  // sur TOUS les appels GraphQL, vu en review le 6 octobre 2026 après l'avoir
+  // désactivé par erreur pour contourner un autre bug (voir authenticateWebhook
+  // ci-dessous pour le vrai correctif de ce second bug, sans toucher à ce flag).
+  future: {
+    expiringOfflineAccessTokens: true,
+  },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
@@ -70,5 +73,43 @@ export async function authenticateAdmin(request: Request) {
   } catch (erreur) {
     if (erreur instanceof Response) throw erreur;
     throw new Response("Paramètres de requête invalides", { status: 400 });
+  }
+}
+
+/**
+ * À utiliser à la place de authenticate.webhook(request) dans toutes les routes
+ * /webhooks/*. Avec expiringOfflineAccessTokens actif (requis, cf. ci-dessus),
+ * authenticate.webhook() tente de rafraîchir le token offline dès qu'il approche de
+ * l'expiration — y compris pour app/uninstalled et shop/redact, qui arrivent
+ * justement quand Shopify vient de le révoquer. Ce rafraîchissement échoue alors
+ * côté Shopify, et la librairie relance l'erreur AVANT que authenticate.webhook()
+ * ne retourne, donc avant que notre handler ne s'exécute (500 systématique, vu en
+ * review le 6 octobre 2026).
+ *
+ * À ce stade de authenticate.webhook(), le HMAC a déjà été validé (sinon la
+ * librairie aurait levé un Response 401/400 plus tôt) : la requête est donc
+ * authentiquement de Shopify, même si on ne peut pas récupérer la session/le
+ * payload complet. On retombe sur shop/topic lus directement depuis les en-têtes
+ * HMAC-signés (toujours disponibles), suffisants pour les handlers qui n'ont besoin
+ * que du domaine de la boutique (app/uninstalled, shop/redact).
+ */
+export async function authenticateWebhook(request: Request) {
+  try {
+    return await authenticate.webhook(request);
+  } catch (erreur) {
+    if (erreur instanceof Response) throw erreur;
+    const shop = request.headers.get("X-Shopify-Shop-Domain") ?? "";
+    const topic = request.headers.get("X-Shopify-Topic") ?? "";
+    console.error(`authenticate.webhook() a échoué (token offline) pour ${topic} / ${shop} :`, erreur);
+    return {
+      shop,
+      topic,
+      session: undefined,
+      payload: null,
+      admin: undefined,
+      apiVersion: apiVersion as unknown as Awaited<ReturnType<typeof authenticate.webhook>>["apiVersion"],
+      webhookId: request.headers.get("X-Shopify-Webhook-Id") ?? "",
+      webhookType: undefined,
+    } as unknown as Awaited<ReturnType<typeof authenticate.webhook>>;
   }
 }
