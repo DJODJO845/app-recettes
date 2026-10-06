@@ -8,7 +8,19 @@ import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, billing } = await authenticate.admin(request);
+  // authenticate.admin() lève un Response (redirection OAuth/billing) dans les cas
+  // normaux — à laisser remonter tel quel. Mais face à un paramètre host/shop corrompu
+  // (observé en review le 6 octobre 2026 : host illisible en URL), la librairie lève une
+  // TypeError non gérée au lieu d'un Response, ce qui plantait la requête en 500 au lieu
+  // de la rejeter proprement.
+  let authResult;
+  try {
+    authResult = await authenticate.admin(request);
+  } catch (erreur) {
+    if (erreur instanceof Response) throw erreur;
+    throw new Response("Paramètres de requête invalides", { status: 400 });
+  }
+  const { session, billing } = authResult;
   await obtenirOuCreerBoutique(session.shop);
 
   // Facturation TEST par défaut (aucune carte requise), quel que soit

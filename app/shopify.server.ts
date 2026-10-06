@@ -34,9 +34,12 @@ const shopify = shopifyApp({
       ],
     },
   },
-  future: {
-    expiringOfflineAccessTokens: true,
-  },
+  // expiringOfflineAccessTokens désactivé : avec ce flag actif, authenticate.webhook()
+  // tente de rafraîchir le token offline dès qu'il approche de l'expiration, y compris
+  // pour app/uninstalled et shop/redact — qui arrivent justement au moment où Shopify
+  // vient de révoquer ce token. Le rafraîchissement échoue alors côté Shopify, et la
+  // librairie relance l'erreur sans que notre handler ne s'exécute (500 systématique,
+  // vu en review le 6 octobre 2026 sur ces deux webhooks).
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
