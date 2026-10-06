@@ -51,29 +51,49 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
   const boutique = await obtenirOuCreerBoutique(session.shop);
 
-  try {
-    // Import incrémental : on ne repart de dateDebutActivite en entier que la
-    // première fois (ou juste après un changement de cette date, qui remet
-    // derniereImportation à null — voir mettreAJourReglages) ; sinon on ne
-    // redemande à Shopify que les commandes MODIFIÉES depuis le dernier import
-    // réussi (pas seulement créées — voir importerCommandesRecentes pour pourquoi),
-    // pour éviter de retélécharger tout l'historique à chaque visite.
-    const depuis = boutique.derniereImportation
-      ? new Date(boutique.derniereImportation.getTime() - JOURS_MARGE_IMPORT_INCREMENTAL * 24 * 60 * 60 * 1000)
-      : boutique.dateDebutActivite;
+  // Import des commandes et vérification de la devise sont deux appels Shopify
+  // indépendants : les lancer en parallèle (plutôt que l'un après l'autre) évite de
+  // payer deux fois la latence réseau à chaque chargement du tableau de bord (chaque
+  // appel observé à ~1-1,5s en review le 6 octobre 2026, d'où un /app perçu comme lent).
+  const [resultatImport, resultatDevise] = await Promise.allSettled([
+    (async () => {
+      // Import incrémental : on ne repart de dateDebutActivite en entier que la
+      // première fois (ou juste après un changement de cette date, qui remet
+      // derniereImportation à null — voir mettreAJourReglages) ; sinon on ne
+      // redemande à Shopify que les commandes MODIFIÉES depuis le dernier import
+      // réussi (pas seulement créées — voir importerCommandesRecentes pour pourquoi),
+      // pour éviter de retélécharger tout l'historique à chaque visite.
+      const depuis = boutique.derniereImportation
+        ? new Date(boutique.derniereImportation.getTime() - JOURS_MARGE_IMPORT_INCREMENTAL * 24 * 60 * 60 * 1000)
+        : boutique.dateDebutActivite;
 
-    await importerCommandesRecentes(admin, session.shop, depuis, boutique.dateDebutActivite);
-    await enregistrerImportation(session.shop);
-  } catch (erreur) {
+      await importerCommandesRecentes(admin, session.shop, depuis, boutique.dateDebutActivite);
+      await enregistrerImportation(session.shop);
+    })(),
+    (async () => {
+      const reponseDevise = await admin.graphql(REQUETE_DEVISE_BOUTIQUE);
+      const jsonDevise = (await reponseDevise.json()) as DeviseBoutiqueResponse;
+      return jsonDevise.data.shop.currencyCode;
+    })(),
+  ]);
+
+  if (resultatImport.status === "rejected") {
     // On n'empêche pas l'affichage du tableau de bord si l'import échoue (ex. souci
     // réseau ponctuel) : on montre les données déjà en base et on journalise l'erreur.
     // On extrait explicitement graphQLErrors : les logs par défaut le tronquent en
     // "[Array]" (limite de profondeur de console.error), ce qui masque le vrai message.
+    // admin.graphql() lève directement la Response brute (pas une Error) quand le HTTP
+    // n'est pas 2xx : son body n'est alors jamais lu nulle part, donc le message réel
+    // de Shopify restait invisible dans les logs (vu en review le 6 octobre 2026 : un
+    // 403 sans aucun détail exploitable).
+    const erreur = resultatImport.reason;
     const graphQLErrors = (erreur as { graphQLErrors?: unknown })?.graphQLErrors;
+    const corpsReponse = erreur instanceof Response ? await erreur.clone().text().catch(() => "") : "";
     console.error(
       "Échec de l'import des commandes Shopify :",
       erreur instanceof Error ? erreur.message : erreur,
       graphQLErrors ? JSON.stringify(graphQLErrors) : "",
+      corpsReponse,
     );
   }
 
@@ -82,12 +102,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // une boutique dans une autre devise verrait ses montants affichés avec un "€"
   // trompeur, sans le savoir.
   let deviseBoutique = "EUR";
-  try {
-    const reponseDevise = await admin.graphql(REQUETE_DEVISE_BOUTIQUE);
-    const jsonDevise = (await reponseDevise.json()) as DeviseBoutiqueResponse;
-    deviseBoutique = jsonDevise.data.shop.currencyCode;
-  } catch (erreur) {
-    console.error("Échec de la vérification de la devise de la boutique :", erreur);
+  if (resultatDevise.status === "fulfilled") {
+    deviseBoutique = resultatDevise.value;
+  } else {
+    const erreur = resultatDevise.reason;
+    const corpsReponse = erreur instanceof Response ? await erreur.clone().text().catch(() => "") : "";
+    console.error("Échec de la vérification de la devise de la boutique :", erreur, corpsReponse);
   }
 
   const totaux = await calculerTotauxDashboard(

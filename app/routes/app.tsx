@@ -57,7 +57,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     // observé en review le 6 octobre 2026) remonte brute. On laisse passer les
     // Response (redirection vers la page d'approbation) et on ne convertit que
     // les vraies exceptions, pour ne jamais planter en 500 sur ce point d'entrée.
-    if (erreur instanceof Response) throw erreur;
+    if (erreur instanceof Response) {
+      // Un Response ici est normalement une redirection légitime (3xx, vers la page
+      // d'approbation de l'abonnement) — à ne pas journaliser comme une erreur. On ne
+      // logue que les statuts d'erreur réels (ex. le 403 Shopify observé en review).
+      if (erreur.status >= 400) {
+        const corpsReponse = await erreur.clone().text().catch(() => "");
+        console.error("Échec de billing.require() :", erreur.status, corpsReponse);
+      }
+      throw erreur;
+    }
     throw new Response("Vérification de l'abonnement temporairement indisponible, merci de réessayer.", { status: 503 });
   }
 
