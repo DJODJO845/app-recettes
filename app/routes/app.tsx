@@ -80,10 +80,8 @@ export default function App() {
 
   return (
     <AppProvider embedded apiKey={apiKey}>
-      {/* Pas de lien "Tableau de bord" explicite : le titre de l'app dans s-app-nav
-          (élément natif Shopify) pointe déjà vers /app — un lien en plus ferait
-          doublon dans le menu (signalé le 7 octobre 2026). */}
       <s-app-nav>
+        <s-link href="/app">Tableau de bord</s-link>
         <s-link href="/app/livre">Livre des recettes</s-link>
         <s-link href="/app/export">Export</s-link>
         <s-link href="/app/reglages">Réglages</s-link>
