@@ -10,7 +10,16 @@ export const meta: MetaFunction = () => [{ title: "Recettes URSSAF" }];
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
 
-  if (url.searchParams.get("shop")) {
+  // `shop` seul ne suffit pas : Shopify peut renvoyer ici (ex. clic sur le titre de
+  // l'app dans la nav embarquée) avec `host` ou `embedded` mais sans `shop`, auquel
+  // cas on affichait par erreur la page publique (formulaire "Domaine de la
+  // boutique") au lieu de ramener directement au tableau de bord — bloquant le
+  // marchand dans l'app embarquée (observé en test le 7 octobre 2026).
+  if (
+    url.searchParams.get("shop") ||
+    url.searchParams.get("host") ||
+    url.searchParams.get("embedded")
+  ) {
     throw redirect(`/app?${url.searchParams.toString()}`);
   }
 
