@@ -4,7 +4,7 @@ import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
 import { authenticateAdmin } from "../shopify.server";
 import { obtenirOuCreerBoutique, enregistrerImportation } from "../lib/db/boutique.server";
-import { calculerTotauxDashboard, calculerEvolutionMensuelle } from "../lib/db/totaux.server";
+import { calculerTotauxDashboard, calculerEvolutionMensuelle, calculerComparaisonAnnuelle } from "../lib/db/totaux.server";
 import { listerDernieresLignes } from "../lib/db/lignesLivre.server";
 import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.server";
 import { REQUETE_DEVISE_BOUTIQUE, type DeviseBoutiqueResponse } from "../lib/shopify/graphql";
@@ -110,13 +110,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.error("Échec de la vérification de la devise de la boutique :", erreur, corpsReponse);
   }
 
-  // Trois lectures indépendantes (aucune ne dépend du résultat des autres) : les
-  // lancer en parallèle évite de payer trois fois l'aller-retour réseau vers Supabase
-  // (hébergé en Irlande, alors que Render tourne en Ohio — chaque requête compte).
-  const [totaux, dernieresLignes, evolutionMensuelle] = await Promise.all([
+  // Quatre lectures indépendantes (aucune ne dépend du résultat des autres) : les
+  // lancer en parallèle évite de payer l'aller-retour réseau vers Supabase (hébergé
+  // en Irlande, alors que Render tourne en Ohio — chaque requête compte) autant de
+  // fois qu'il y a de lectures.
+  const [totaux, dernieresLignes, evolutionMensuelle, comparaisonAnnuelle] = await Promise.all([
     calculerTotauxDashboard(session.shop, boutique.periodicite, boutique.typeActivite),
     listerDernieresLignes(session.shop, NOMBRE_DERNIERES_RECETTES),
     calculerEvolutionMensuelle(session.shop, NOMBRE_MOIS_EVOLUTION),
+    calculerComparaisonAnnuelle(session.shop),
   ]);
 
   const plafond = plafondAnnuel(boutique.typeActivite.toLowerCase() as "commerce" | "services" | "mixte");
@@ -140,6 +142,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     pourcentagePlafond,
     dernieresLignes,
     evolutionMensuelle,
+    comparaisonAnnuelle,
     doitRappelerExport,
     typeActivite: boutique.typeActivite,
     deviseBoutique,
@@ -156,6 +159,7 @@ export default function Dashboard() {
     pourcentagePlafond,
     dernieresLignes,
     evolutionMensuelle,
+    comparaisonAnnuelle,
     doitRappelerExport,
     typeActivite,
     deviseBoutique,
@@ -293,6 +297,17 @@ export default function Dashboard() {
       </s-section>
 
       <s-section heading="Évolution du CA encaissé">
+        {comparaisonAnnuelle.variationPourcent !== null && (
+          <s-stack direction="inline" gap="small-200" alignItems="center">
+            <s-badge tone={comparaisonAnnuelle.variationPourcent >= 0 ? "success" : "warning"}>
+              {comparaisonAnnuelle.variationPourcent >= 0 ? "+" : ""}
+              {comparaisonAnnuelle.variationPourcent} %
+            </s-badge>
+            <s-text color="subdued">
+              vs l&apos;an dernier à la même date ({formateurEUR.format(comparaisonAnnuelle.caAnneePrecedente)})
+            </s-text>
+          </s-stack>
+        )}
         <div style={{ display: "flex", alignItems: "flex-end", gap: "12px", height: "150px" }}>
           {evolutionMensuelle.map((point, index) => {
             const estMoisCourant = index === evolutionMensuelle.length - 1;

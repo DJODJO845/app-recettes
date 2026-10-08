@@ -5,6 +5,13 @@ import { periodeCourante, type PeriodeCourante } from "../domain/periode";
 import { composantesParis, debutDeJourParis, finDeJourParis, nombreJoursDuMois } from "../domain/fuseauParis";
 import { listerLignes } from "./lignesLivre.server";
 
+export interface ComparaisonAnnuelle {
+  caAnneeCourante: number;
+  caAnneePrecedente: number;
+  /** null si rien n'a été encaissé à la même date l'an dernier (division par zéro évitée). */
+  variationPourcent: number | null;
+}
+
 export type { PeriodeCourante };
 export { periodeCourante };
 
@@ -80,5 +87,39 @@ export async function calculerTotauxDashboard(
     periode,
     caAnnuelEncaisse,
     niveauAlerte: niveauAlertePlafond(caAnnuelEncaisse, typeActivite.toLowerCase() as TypeActiviteReglementation),
+  };
+}
+
+/**
+ * Compare le CA encaissé depuis le 1er janvier à celui encaissé sur la même plage
+ * l'année précédente (du 1er janvier à la même date calendaire), pour donner du
+ * contexte au Dashboard plutôt qu'un chiffre isolé. `null` sur `variationPourcent`
+ * si rien n'a été encaissé l'an dernier à cette date (boutique trop récente, ou
+ * activité qui vient de démarrer) : un pourcentage de variation n'aurait pas de sens.
+ */
+export async function calculerComparaisonAnnuelle(
+  shopDomain: string,
+  maintenant = new Date(),
+): Promise<ComparaisonAnnuelle> {
+  const { annee, mois, jour } = composantesParis(maintenant);
+
+  const debutAnneeCourante = debutDeJourParis(annee, 0, 1);
+  const finAujourdhui = finDeJourParis(annee, mois, jour);
+  const debutAnneePrecedente = debutDeJourParis(annee - 1, 0, 1);
+  const finMemeDateAnneePrecedente = finDeJourParis(annee - 1, mois, jour);
+
+  const [lignesAnneeCourante, lignesAnneePrecedente] = await Promise.all([
+    listerLignes(shopDomain, { debut: debutAnneeCourante, fin: finAujourdhui }),
+    listerLignes(shopDomain, { debut: debutAnneePrecedente, fin: finMemeDateAnneePrecedente }),
+  ]);
+
+  const caAnneeCourante = calculerCAPeriode(lignesAnneeCourante, debutAnneeCourante, finAujourdhui);
+  const caAnneePrecedente = calculerCAPeriode(lignesAnneePrecedente, debutAnneePrecedente, finMemeDateAnneePrecedente);
+
+  return {
+    caAnneeCourante,
+    caAnneePrecedente,
+    variationPourcent:
+      caAnneePrecedente > 0 ? Math.round(((caAnneeCourante - caAnneePrecedente) / caAnneePrecedente) * 100) : null,
   };
 }
