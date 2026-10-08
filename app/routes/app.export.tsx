@@ -95,7 +95,7 @@ export default function Export() {
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="base">
               <s-stack direction="inline" gap="small-300" alignItems="center">
-                <CercleIcone type="export" tone="success" fond="#E3F1EC" />
+                <CercleIcone type="export" tone="success" fond="var(--tinte-ok)" />
                 <s-text type="strong">Export CSV</s-text>
               </s-stack>
               <s-text color="subdued">
@@ -111,7 +111,7 @@ export default function Export() {
           <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="base">
               <s-stack direction="inline" gap="small-300" alignItems="center">
-                <CercleIcone type="print" tone="info" fond="#E1F0FA" />
+                <CercleIcone type="print" tone="info" fond="var(--tinte-info)" />
                 <s-text type="strong">Version imprimable</s-text>
               </s-stack>
               <s-text color="subdued">
