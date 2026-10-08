@@ -31,6 +31,15 @@ enum NatureLigne {
   REMBOURSEMENT
 }
 
+// Niveau d'alerte de plafond déjà notifié par email (api.cron.alertes-plafond.tsx).
+// Mêmes niveaux que NiveauAlertePlafond (lib/domain/reglementation.ts), dupliqués
+// ici en enum Prisma plutôt que partagés : Prisma n'importe pas de types TS.
+enum NiveauAlerte {
+  OK
+  AVERTISSEMENT
+  CRITIQUE
+}
+
 model Boutique {
   id                 String       @id @default(uuid())
   shopDomain         String       @unique
@@ -50,6 +59,11 @@ model Boutique {
   // null quand dateDebutActivite change (mettreAJourReglages), pour forcer un import
   // complet depuis la nouvelle date.
   derniereImportation DateTime?
+  // Dernier niveau d'alerte de plafond déjà notifié par email (api.cron.alertes-
+  // plafond.tsx) : on n'envoie qu'au franchissement d'un seuil, pas à chaque
+  // exécution quotidienne du cron, et on réarme à OK si le CA annuel repasse sous
+  // le seuil (nouvelle année civile) pour que la prochaine hausse notifie à nouveau.
+  derniereAlertePlafondNiveau NiveauAlerte @default(OK)
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 

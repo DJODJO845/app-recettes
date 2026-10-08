@@ -1,0 +1,28 @@
+name: Alerte plafond URSSAF
+
+on:
+  schedule:
+    # 7h15 UTC chaque jour, décalé de rappel-echeance.yml pour ne pas réveiller le
+    # service Render deux fois à la même minute.
+    - cron: "15 7 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  appeler-le-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Appeler le endpoint d'alerte de plafond
+        # Même logique de ré-essai que rappel-echeance.yml : voir ce fichier pour le
+        # détail (service qui peut être encore en train de démarrer).
+        run: |
+          for tentative in 1 2 3 4; do
+            if curl --fail --show-error --silent --max-time 90 \
+              -X POST "${{ secrets.APP_URL }}/api/cron/alertes-plafond" \
+              -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"; then
+              exit 0
+            fi
+            echo "Tentative $tentative échouée (le service était peut-être encore en train de démarrer), nouvel essai dans 30s..."
+            sleep 30
+          done
+          echo "Échec après 4 tentatives."
+          exit 1
