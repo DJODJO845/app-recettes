@@ -80,6 +80,39 @@ export default function App() {
 
   return (
     <AppProvider embedded apiKey={apiKey}>
+      {/* Variables de couleur partagées par toutes les pages /app/* (pas seulement le
+          Dashboard) : un cercle teinté ou un chiffre-clé coloré ailleurs (ex. Réglages)
+          doit lui aussi s'adapter au mode sombre, sans redéfinir ces valeurs à chaque
+          page — ce qui avait justement été oublié sur Réglages avant ce correctif. */}
+      <style>{`
+        :root {
+          --couleur-ok: #008060;
+          --couleur-avertissement: #B98900;
+          --couleur-critique: #D82C0D;
+          --couleur-info: #1F6BAE;
+          --tinte-ok: #E3F1EC;
+          --tinte-avertissement: #FCF1D8;
+          --tinte-critique: #FBEAE5;
+          --tinte-info: #E1F0FA;
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            /* Versions éclaircies (pas les mêmes hex qu'en clair) pour rester lisibles sur
+               fond sombre : les couleurs Polaris standard, pensées pour un fond blanc,
+               perdent trop de contraste telles quelles sur un fond sombre. */
+            --couleur-ok: #3EB489;
+            --couleur-avertissement: #E3B341;
+            --couleur-critique: #FF6B52;
+            --couleur-info: #6BB3E8;
+            /* Teintes foncées et désaturées plutôt que les pastels clairs du mode jour :
+               un pastel clair sur fond sombre ressortirait comme un flash agressif. */
+            --tinte-ok: #1C3A30;
+            --tinte-avertissement: #3D3014;
+            --tinte-critique: #3D2420;
+            --tinte-info: #1C333D;
+          }
+        }
+      `}</style>
       <s-app-nav>
         <s-link href="/app">Tableau de bord</s-link>
         <s-link href="/app/livre">Livre des recettes</s-link>

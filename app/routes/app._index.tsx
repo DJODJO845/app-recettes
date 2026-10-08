@@ -189,35 +189,13 @@ export default function Dashboard() {
           graphique) qui utilisent des couleurs codées en dur : sans ça, par exemple, les
           traits de seuil de la jauge (noir semi-transparent, pensés pour un fond clair)
           deviendraient quasi invisibles sur un fond sombre. */}
+      {/* Les variables --couleur-… et --tinte-… sont définies une fois pour toutes dans
+          app.tsx (layout partagé par toutes les pages /app) : seules les variables
+          propres à cette page (jauge, graphique) restent définies ici. */}
       <style>{`
-        :root {
-          --piste-jauge: #E1E3E5;
-          --repere-jauge: rgba(0,0,0,0.35);
-          --barre-graphique-passee: #B4E0D3;
-          --couleur-ok: #008060;
-          --couleur-avertissement: #B98900;
-          --couleur-critique: #D82C0D;
-          --tinte-ok: #E3F1EC;
-          --tinte-avertissement: #FCF1D8;
-          --tinte-critique: #FBEAE5;
-        }
+        :root { --piste-jauge: #E1E3E5; --repere-jauge: rgba(0,0,0,0.35); --barre-graphique-passee: #B4E0D3; }
         @media (prefers-color-scheme: dark) {
-          :root {
-            --piste-jauge: #4A4E54;
-            --repere-jauge: rgba(255,255,255,0.45);
-            --barre-graphique-passee: #2E5F4E;
-            /* Versions éclaircies (pas les mêmes hex qu'en clair) pour rester lisibles sur
-               fond sombre : le jaune/vert/rouge Polaris standard, pensés pour un fond blanc,
-               perdent trop de contraste tels quels sur un fond sombre. */
-            --couleur-ok: #3EB489;
-            --couleur-avertissement: #E3B341;
-            --couleur-critique: #FF6B52;
-            /* Teintes foncées et désaturées plutôt que les pastels clairs du mode jour :
-               un pastel clair sur fond sombre ressortirait comme un flash agressif. */
-            --tinte-ok: #1C3A30;
-            --tinte-avertissement: #3D3014;
-            --tinte-critique: #3D2420;
-          }
+          :root { --piste-jauge: #4A4E54; --repere-jauge: rgba(255,255,255,0.45); --barre-graphique-passee: #2E5F4E; }
         }
       `}</style>
       {deviseBoutique !== "EUR" && (

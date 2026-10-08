@@ -87,7 +87,7 @@ export default function Reglages() {
           <fetcher.Form method="post" data-save-bar data-discard-confirmation>
             <s-stack direction="block" gap="base">
               <s-stack direction="inline" gap="small-300" alignItems="center">
-                <CercleIcone type="business-entity" tone="info" fond="#E1F0FA" />
+                <CercleIcone type="business-entity" tone="info" fond="var(--tinte-info)" />
                 <s-text color="subdued">
                   Ces réglages déterminent le plafond annuel applicable et le rythme de vos
                   échéances URSSAF.
@@ -151,7 +151,7 @@ export default function Reglages() {
                 <CercleIcone
                   type="receipt-euro"
                   tone={statutAbonnement.enEssai ? "info" : "success"}
-                  fond={statutAbonnement.enEssai ? "#E1F0FA" : "#E3F1EC"}
+                  fond={statutAbonnement.enEssai ? "var(--tinte-info)" : "var(--tinte-ok)"}
                 />
                 <s-badge tone={statutAbonnement.enEssai ? "info" : "success"}>
                   {statutAbonnement.enEssai ? "Essai gratuit" : "Abonnement actif"}
