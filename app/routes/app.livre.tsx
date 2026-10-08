@@ -27,8 +27,12 @@ const BADGE_NATURE = {
   vente: { tone: "success", icon: "check-circle-filled" },
   vente_carte_cadeau: { tone: "info", icon: "gift-card" },
   reglement_carte_cadeau: { tone: "info", icon: "gift-card" },
-  remboursement: { tone: "critical", icon: "arrow-left" },
-} as const satisfies Record<NatureLigneLivre, { tone: "success" | "info" | "critical"; icon: string }>;
+  // "warning" plutôt que "critical" : un remboursement est un événement normal en
+  // comptabilité, pas une erreur système — "critical" (rouge vif, déjà utilisé pour le
+  // montant négatif juste en dessous) double le signal d'alarme pour quelque chose de
+  // banal.
+  remboursement: { tone: "warning", icon: "arrow-left" },
+} as const satisfies Record<NatureLigneLivre, { tone: "success" | "info" | "warning"; icon: string }>;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticateAdmin(request);
