@@ -8,7 +8,7 @@ import { calculerTotauxDashboard, calculerEvolutionMensuelle, calculerComparaiso
 import { listerDernieresLignes } from "../lib/db/lignesLivre.server";
 import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.server";
 import { REQUETE_DEVISE_BOUTIQUE, type DeviseBoutiqueResponse } from "../lib/shopify/graphql";
-import { plafondAnnuel, seuilsAlerte, type NiveauAlertePlafond } from "../lib/domain/reglementation";
+import { plafondAnnuel, seuilsAlerte, projectionDatePlafond, type NiveauAlertePlafond } from "../lib/domain/reglementation";
 import { BanniereExport } from "../lib/ui/BanniereExport";
 import { TexteDepliable } from "../lib/ui/TexteDepliable";
 import { joursDepuis } from "../lib/ui/dateRelative";
@@ -135,6 +135,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const doitRappelerExport =
     !boutique.derniereExportation || joursDepuis(boutique.derniereExportation) >= JOURS_AVANT_RAPPEL_EXPORT;
 
+  const dateProjeteePlafond = projectionDatePlafond(
+    totaux.caAnnuelEncaisse,
+    plafond,
+    boutique.dateDebutActivite,
+    new Date(),
+  );
+
   return {
     totaux,
     plafond,
@@ -148,6 +155,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     deviseBoutique,
     pourcentageAvertissement,
     pourcentageCritique,
+    dateProjeteePlafond,
   };
 };
 
@@ -165,6 +173,7 @@ export default function Dashboard() {
     deviseBoutique,
     pourcentageAvertissement,
     pourcentageCritique,
+    dateProjeteePlafond,
   } = useLoaderData<typeof loader>();
   const badge = BADGE_ALERTE[totaux.niveauAlerte];
   const maxEvolution = Math.max(...evolutionMensuelle.map((point) => point.ca), 1);
@@ -259,6 +268,11 @@ export default function Dashboard() {
             <s-text color="subdued">{formateurEUR.format(plafond)}</s-text>
           </s-stack>
           <s-text color="subdued">Seuils d&apos;alerte : {pourcentageAvertissement} % et {pourcentageCritique} %</s-text>
+          {dateProjeteePlafond && (
+            <s-text color="subdued">
+              Au rythme actuel, vous atteindriez le plafond vers le {formateurDate.format(new Date(dateProjeteePlafond))}.
+            </s-text>
+          )}
           {typeActivite === "MIXTE" && (
             <s-banner tone="info">
               <s-paragraph>
