@@ -313,7 +313,11 @@ export default function Dashboard() {
       <s-section heading="Évolution du CA encaissé">
         {comparaisonAnnuelle.variationPourcent !== null && (
           <s-stack direction="inline" gap="small-200" alignItems="center">
-            <s-badge tone={comparaisonAnnuelle.variationPourcent >= 0 ? "success" : "warning"}>
+            {/* Ton neutre volontaire : ce badge compare le rythme d'encaissement à l'an
+                dernier, une donnée indépendante du niveau d'alerte plafond (totaux.niveauAlerte,
+                qui a lui sa propre couleur plus haut dans la jauge). Un badge vert/jaune ici
+                créerait un signal contradictoire si la jauge est par ailleurs en orange/rouge. */}
+            <s-badge tone="neutral">
               {comparaisonAnnuelle.variationPourcent >= 0 ? "+" : ""}
               {comparaisonAnnuelle.variationPourcent} %
             </s-badge>
