@@ -320,7 +320,12 @@ export default function Dashboard() {
                 en cause votre régime micro-entrepreneur : anticipez avec un
                 expert-comptable si vous pensez le dépasser cette année.
               </s-paragraph>
-              <s-button slot="primary-action" href="https://www.autoentrepreneur.urssaf.fr" target="_blank">
+              {/* secondary-actions plutôt que primary-action : ce lien est un complément
+                  d'information (le site de l'URSSAF), pas l'action attendue du marchand
+                  (plutôt contacter un expert-comptable, qui n'a pas de bouton) — un bouton
+                  plein ici ajouterait de l'urgence visuelle sans raison, alors que le ton
+                  de la bannière suffit déjà à alerter. */}
+              <s-button slot="secondary-actions" variant="secondary" href="https://www.autoentrepreneur.urssaf.fr" target="_blank">
                 Voir le site de l&apos;URSSAF
               </s-button>
             </s-banner>
@@ -331,7 +336,7 @@ export default function Dashboard() {
                 Attention, vous dépassez {pourcentageCritique} % du plafond annuel. Rapprochez-vous d&apos;un
                 expert-comptable ou de l&apos;URSSAF rapidement.
               </s-paragraph>
-              <s-button slot="primary-action" href="https://www.autoentrepreneur.urssaf.fr" target="_blank">
+              <s-button slot="secondary-actions" variant="secondary" href="https://www.autoentrepreneur.urssaf.fr" target="_blank">
                 Voir le site de l&apos;URSSAF
               </s-button>
             </s-banner>
