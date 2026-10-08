@@ -24,10 +24,14 @@ const JOURS_AVANT_RAPPEL_EXPORT = 30;
 // une commande créée juste avant le dernier import.
 const JOURS_MARGE_IMPORT_INCREMENTAL = 1;
 
+// Valeurs posées en variables CSS (voir <style> dans le composant, même pattern que
+// --piste-jauge) plutôt qu'en hex figé ici : sans ça, ces couleurs fortes et teintes
+// pastel ne s'adaptaient pas au mode sombre — un cercle pastel très clair ressort comme
+// un flash blanc agressif sur fond sombre, et le jaune devient peu lisible.
 const COULEUR_ALERTE: Record<NiveauAlertePlafond, string> = {
-  ok: "#008060",
-  avertissement: "#B98900",
-  critique: "#D82C0D",
+  ok: "var(--couleur-ok)",
+  avertissement: "var(--couleur-avertissement)",
+  critique: "var(--couleur-critique)",
 };
 
 // Polaris limite volontairement les fonds de s-box à des gris neutres (une app
@@ -36,9 +40,9 @@ const COULEUR_ALERTE: Record<NiveauAlertePlafond, string> = {
 // accent — icône dans un cercle teinté, chiffre-clé coloré — plutôt que des
 // fonds de carte colorés.
 const TEINTE_ALERTE: Record<NiveauAlertePlafond, string> = {
-  ok: "#E3F1EC",
-  avertissement: "#FCF1D8",
-  critique: "#FBEAE5",
+  ok: "var(--tinte-ok)",
+  avertissement: "var(--tinte-avertissement)",
+  critique: "var(--tinte-critique)",
 };
 
 const BADGE_ALERTE = {
@@ -186,9 +190,34 @@ export default function Dashboard() {
           traits de seuil de la jauge (noir semi-transparent, pensés pour un fond clair)
           deviendraient quasi invisibles sur un fond sombre. */}
       <style>{`
-        :root { --piste-jauge: #E1E3E5; --repere-jauge: rgba(0,0,0,0.35); --barre-graphique-passee: #B4E0D3; }
+        :root {
+          --piste-jauge: #E1E3E5;
+          --repere-jauge: rgba(0,0,0,0.35);
+          --barre-graphique-passee: #B4E0D3;
+          --couleur-ok: #008060;
+          --couleur-avertissement: #B98900;
+          --couleur-critique: #D82C0D;
+          --tinte-ok: #E3F1EC;
+          --tinte-avertissement: #FCF1D8;
+          --tinte-critique: #FBEAE5;
+        }
         @media (prefers-color-scheme: dark) {
-          :root { --piste-jauge: #4A4E54; --repere-jauge: rgba(255,255,255,0.45); --barre-graphique-passee: #2E5F4E; }
+          :root {
+            --piste-jauge: #4A4E54;
+            --repere-jauge: rgba(255,255,255,0.45);
+            --barre-graphique-passee: #2E5F4E;
+            /* Versions éclaircies (pas les mêmes hex qu'en clair) pour rester lisibles sur
+               fond sombre : le jaune/vert/rouge Polaris standard, pensés pour un fond blanc,
+               perdent trop de contraste tels quels sur un fond sombre. */
+            --couleur-ok: #3EB489;
+            --couleur-avertissement: #E3B341;
+            --couleur-critique: #FF6B52;
+            /* Teintes foncées et désaturées plutôt que les pastels clairs du mode jour :
+               un pastel clair sur fond sombre ressortirait comme un flash agressif. */
+            --tinte-ok: #1C3A30;
+            --tinte-avertissement: #3D3014;
+            --tinte-critique: #3D2420;
+          }
         }
       `}</style>
       {deviseBoutique !== "EUR" && (
