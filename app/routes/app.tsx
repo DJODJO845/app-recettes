@@ -1,5 +1,6 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useRouteError } from "react-router";
+import { Outlet, useLoaderData, useNavigation, useRouteError } from "react-router";
+import { useEffect, useState } from "react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
@@ -75,11 +76,65 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
 };
 
+/**
+ * Fine barre de progression en haut de l'app pendant toute navigation (changement de
+ * page, filtre, soumission de formulaire...) — aucune page de l'app n'avait de retour
+ * visuel pendant un chargement, ce qui peut donner l'impression qu'un clic n'a rien
+ * fait sur une connexion lente. On ne connaît pas la vraie progression (React Router
+ * ne l'expose pas), donc on simule : avance lentement sans jamais atteindre 100% tant
+ * que la navigation est en cours, puis complète d'un coup et s'efface dès qu'elle se
+ * termine — un saut direct à zéro donnerait au contraire l'impression que rien n'a
+ * chargé.
+ */
+function BarreDeChargement() {
+  const navigation = useNavigation();
+  const [etat, setEtat] = useState<"inactive" | "en-cours" | "termine">("inactive");
+
+  useEffect(() => {
+    if (navigation.state !== "idle") {
+      setEtat("en-cours");
+      return;
+    }
+    setEtat((precedent) => (precedent === "en-cours" ? "termine" : "inactive"));
+  }, [navigation.state]);
+
+  useEffect(() => {
+    if (etat !== "termine") return;
+    const minuteur = setTimeout(() => setEtat("inactive"), 200);
+    return () => clearTimeout(minuteur);
+  }, [etat]);
+
+  if (etat === "inactive") return null;
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: "3px",
+        zIndex: 9999,
+        background: "var(--couleur-ok)",
+        transformOrigin: "left",
+        transform: etat === "termine" ? "scaleX(1)" : "scaleX(0.85)",
+        opacity: etat === "termine" ? 0 : 1,
+        transition:
+          etat === "termine"
+            ? "transform 0.2s ease-out, opacity 0.3s ease-out 0.15s"
+            : "transform 6s cubic-bezier(0.1, 0.6, 0.3, 1)",
+      }}
+    />
+  );
+}
+
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
 
   return (
     <AppProvider embedded apiKey={apiKey}>
+      <BarreDeChargement />
       {/* Variables de couleur partagées par toutes les pages /app/* (pas seulement le
           Dashboard) : un cercle teinté ou un chiffre-clé coloré ailleurs (ex. Réglages)
           doit lui aussi s'adapter au mode sombre, sans redéfinir ces valeurs à chaque
