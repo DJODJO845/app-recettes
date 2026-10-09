@@ -60,8 +60,9 @@ export default function App() {
             principe d&apos;encaissement, sans avoir à faire le calcul vous-même.
           </li>
           <li>
-            <strong>Export CSV et PDF.</strong> Pour conserver votre livre 10 ans,
-            comme l&apos;exige la réglementation.
+            <strong>Alertes avant de dépasser votre plafond.</strong> Suivi en
+            continu du chiffre d&apos;affaires annuel, pour ne jamais perdre votre
+            statut de micro-entrepreneur sans le voir venir.
           </li>
         </ul>
       </div>
