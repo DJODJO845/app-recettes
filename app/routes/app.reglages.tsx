@@ -76,15 +76,12 @@ export default function Reglages() {
 
   return (
     <s-page heading="Réglages">
-      <s-section heading="Votre activité">
-        <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
-          {/* data-save-bar : barre native App Bridge ("Enregistrer"/"Annuler"), affichée
-              automatiquement en haut de l'app dès qu'un champ change — remplace le bouton
-              "Enregistrer" custom (retiré ci-dessous) pour un rendu natif Shopify Admin,
-              cohérent avec ce que Shopify recommande pour ce genre de formulaire de
-              réglages. data-discard-confirmation : demande confirmation avant d'annuler
-              des modifications non enregistrées. */}
-          <fetcher.Form method="post" data-save-bar data-discard-confirmation>
+      {/* Un seul <fetcher.Form> enveloppe les deux sections : data-save-bar doit voir
+          TOUS les champs pour afficher "Enregistrer" dès que l'un d'eux change, même
+          si on les présente visuellement en deux groupes distincts ci-dessous. */}
+      <fetcher.Form method="post" data-save-bar data-discard-confirmation>
+        <s-section heading="Votre activité">
+          <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
             <s-stack direction="block" gap="base">
               <s-stack direction="inline" gap="small-300" alignItems="center">
                 <CercleIcone type="business-entity" tone="info" fond="var(--tinte-info)" />
@@ -131,6 +128,20 @@ export default function Reglages() {
                 details="Détermine depuis quand l'app va chercher vos commandes Shopify. La reculer permet de récupérer un historique plus ancien (dans la limite de ce que Shopify autorise)."
                 defaultValue={dateISOParis(new Date(boutique.dateDebutActivite))}
               />
+            </s-stack>
+          </s-box>
+        </s-section>
+
+        <s-section heading="Notifications">
+          <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
+            <s-stack direction="block" gap="base">
+              <s-stack direction="inline" gap="small-300" alignItems="center">
+                <CercleIcone type="email" tone="info" fond="var(--tinte-info)" />
+                <s-text color="subdued">
+                  Utilisé pour le rappel de fin de période et les alertes de
+                  dépassement du plafond (80 % puis 95 %).
+                </s-text>
+              </s-stack>
 
               <s-email-field
                 name="emailRappel"
@@ -139,9 +150,9 @@ export default function Reglages() {
                 details="Laisser vide pour utiliser l'email de votre compte Shopify"
               />
             </s-stack>
-          </fetcher.Form>
-        </s-box>
-      </s-section>
+          </s-box>
+        </s-section>
+      </fetcher.Form>
 
       {statutAbonnement && (
         <s-section heading="Abonnement">
