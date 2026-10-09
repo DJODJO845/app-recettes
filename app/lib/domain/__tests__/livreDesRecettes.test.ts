@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculerCAPeriode, construireLignesLivre } from "../livreDesRecettes";
+import { calculerCAPeriode, commandeEstDansPerimetre, construireLignesLivre, libelleCanal } from "../livreDesRecettes";
 import { niveauAlertePlafond, plafondAnnuel } from "../reglementation";
 import type { CommandeShopify } from "../types";
 
@@ -110,6 +110,30 @@ describe("construireLignesLivre — carte cadeau (émission vs rédemption)", ()
   });
 });
 
+describe("construireLignesLivre — remboursement émis en avoir/carte cadeau", () => {
+  it("ne réduit pas le CA : aucun argent réel ne sort du compte du marchand", () => {
+    const cmd = commande({
+      id: "gid://9",
+      name: "#1009",
+      transactions: [
+        { id: "txn-9-vente", orderId: "gid://9", kind: "sale", status: "success", amount: 80, gateway: "shopify_payments", processedAt: "2026-05-10T08:00:00Z" },
+        // Le marchand rembourse sous forme d'avoir (carte cadeau) plutôt que de rendre
+        // l'argent sur la carte d'origine : Shopify crédite juste une carte cadeau,
+        // aucun argent ne sort réellement du compte du marchand.
+        { id: "txn-9-remb", orderId: "gid://9", kind: "refund", status: "success", amount: 80, gateway: "gift_card", processedAt: "2026-05-12T09:00:00Z" },
+      ],
+    });
+
+    const lignes = construireLignesLivre(cmd);
+
+    expect(lignes).toHaveLength(2);
+    expect(lignes[1]).toMatchObject({ nature: "remboursement", montant: -80, compteDansCA: false });
+
+    const ca = calculerCAPeriode(lignes, new Date("2026-05-01"), new Date("2026-05-31T23:59:59Z"));
+    expect(ca).toBe(80);
+  });
+});
+
 describe("construireLignesLivre — paiement manuel (virement, espèces)", () => {
   it("compte l'encaissement mais ajoute un avertissement de vérification de la date", () => {
     const cmd = commande({
@@ -158,6 +182,66 @@ describe("construireLignesLivre — vente via Shopify POS", () => {
     const lignes = construireLignesLivre(cmd);
 
     expect(lignes[0]).toMatchObject({ montant: 75, compteDansCA: true, canal: "pos" });
+  });
+});
+
+describe("commandeEstDansPerimetre", () => {
+  it("écarte une commande entière (vente + remboursement) vendue avant le plancher", () => {
+    const cmd = commande({
+      id: "gid://10",
+      name: "#1010",
+      transactions: [
+        { id: "txn-10-vente", orderId: "gid://10", kind: "sale", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-01-05T10:00:00Z" },
+        { id: "txn-10-remb", orderId: "gid://10", kind: "refund", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-07-01T10:00:00Z" },
+      ],
+    });
+
+    // dateDebutActivite déclarée après la vente d'origine, mais avant le remboursement :
+    // toute la commande doit être écartée, pas seulement la ligne de vente — sinon le
+    // remboursement apparaîtrait seul, sans vente correspondante dans le livre.
+    expect(commandeEstDansPerimetre(cmd, new Date("2026-03-01T00:00:00Z"))).toBe(false);
+  });
+
+  it("garde une commande dont la vente d'origine est après le plancher", () => {
+    const cmd = commande({
+      id: "gid://11",
+      name: "#1011",
+      transactions: [
+        { id: "txn-11-vente", orderId: "gid://11", kind: "sale", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-04-05T10:00:00Z" },
+      ],
+    });
+
+    expect(commandeEstDansPerimetre(cmd, new Date("2026-03-01T00:00:00Z"))).toBe(true);
+  });
+
+  it("le filtre commande + ligne combinés n'introduisent aucun remboursement orphelin", () => {
+    const venteHorsPerimetre = commande({
+      id: "gid://12",
+      name: "#1012",
+      transactions: [
+        { id: "txn-12-vente", orderId: "gid://12", kind: "sale", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-01-05T10:00:00Z" },
+        { id: "txn-12-remb", orderId: "gid://12", kind: "refund", status: "success", amount: 60, gateway: "shopify_payments", processedAt: "2026-07-01T10:00:00Z" },
+      ],
+    });
+
+    const plancher = new Date("2026-03-01T00:00:00Z");
+    const lignes = commandeEstDansPerimetre(venteHorsPerimetre, plancher)
+      ? construireLignesLivre(venteHorsPerimetre)
+      : [];
+
+    expect(lignes).toHaveLength(0);
+  });
+});
+
+describe("libelleCanal", () => {
+  it("traduit les canaux de vente Shopify connus en français", () => {
+    expect(libelleCanal("web")).toBe("Boutique en ligne");
+    expect(libelleCanal("quick_sale")).toBe("Point de vente (vente rapide)");
+    expect(libelleCanal("shopify_draft_order")).toBe("Commande brouillon");
+  });
+
+  it("laisse inchangée une valeur non répertoriée plutôt que de planter", () => {
+    expect(libelleCanal("un_canal_inconnu")).toBe("un_canal_inconnu");
   });
 });
 

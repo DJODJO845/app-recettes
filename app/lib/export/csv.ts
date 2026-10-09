@@ -1,16 +1,24 @@
-import type { LigneLivreDesRecettes, NatureLigneLivre } from "../domain/types";
-
-const LIBELLES_NATURE: Record<NatureLigneLivre, string> = {
-  vente: "Vente",
-  vente_carte_cadeau: "Vente de carte cadeau",
-  reglement_carte_cadeau: "Règlement par carte cadeau",
-  remboursement: "Remboursement",
-};
+import type { LigneLivreDesRecettes } from "../domain/types";
+import { LIBELLES_NATURE, libelleCanal, libelleModeReglement } from "../domain/livreDesRecettes";
 
 const EN_TETES = ["Date", "Référence", "Client", "Nature", "Mode de règlement", "Canal", "Montant"];
 
+// Format numérique (JJ/MM/AAAA), pas le format texte de lib/ui/formateurs.ts : un
+// tableur (Excel, Google Sheets) reconnaît et trie ce format automatiquement comme
+// une date, contrairement à "20 sept. 2026". timeZone explicite pour la même raison
+// que partout ailleurs (cf. lib/domain/fuseauParis.ts) : sans ça, une vente encaissée
+// juste après minuit heure de Paris s'exporterait avec la date de la veille.
+const formateurDateCSV = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris" });
+
+// \r inclus, pas seulement \n : un retour chariot isolé (sans \n) dans un champ non
+// entouré de guillemets serait interprété par un tableur comme une fin de ligne au
+// même titre que \r\n (le séparateur utilisé plus bas entre chaque ligne du CSV),
+// décalant silencieusement toutes les lignes suivantes. Sans incidence aujourd'hui
+// (reference vient de Shopify, client vaut toujours "Client" générique — voir
+// mapper.server.ts), mais deviendra pertinent une fois les vrais noms de clients
+// activés (un nom saisi au checkout est une donnée que le client contrôle).
 function echapperChampCSV(valeur: string): string {
-  if (/[;"\n]/.test(valeur)) {
+  if (/[;"\r\n]/.test(valeur)) {
     return `"${valeur.replace(/"/g, '""')}"`;
   }
   return valeur;
@@ -25,12 +33,12 @@ export function genererCSV(lignes: LigneLivreDesRecettes[]): string {
   const entetes = EN_TETES.join(";");
   const corps = lignes.map((ligne) =>
     [
-      new Date(ligne.date).toLocaleDateString("fr-FR"),
+      formateurDateCSV.format(new Date(ligne.date)),
       ligne.reference,
       ligne.client,
       LIBELLES_NATURE[ligne.nature],
-      ligne.modeReglement,
-      ligne.canal,
+      libelleModeReglement(ligne.modeReglement),
+      libelleCanal(ligne.canal),
       ligne.montant.toFixed(2).replace(".", ","),
     ]
       .map(echapperChampCSV)

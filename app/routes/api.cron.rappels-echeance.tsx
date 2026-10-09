@@ -1,12 +1,11 @@
 import type { ActionFunctionArgs } from "react-router";
 import prisma from "../db.server";
-import { unauthenticated } from "../shopify.server";
 import { calculerCAPeriode } from "../lib/domain/livreDesRecettes";
 import { periodeVientDeSeTerminer } from "../lib/domain/periode";
 import { listerLignes } from "../lib/db/lignesLivre.server";
 import { envoyerEmail } from "../lib/email/resend.server";
-
-const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+import { resoudreEmailBoutique } from "../lib/shopify/emailBoutique.server";
+import { formateurEUR } from "../lib/ui/formateurs";
 
 /**
  * Appelée une fois par jour par un déclencheur externe (workflow GitHub Actions —
@@ -31,17 +30,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!estDue) continue;
 
     try {
-      // L'email choisi dans Réglages (app.reglages.tsx) prime sur celui du compte
-      // Shopify, pour permettre d'envoyer le rappel à un comptable ou une autre boîte.
-      let email = boutique.emailRappel;
-      if (!email) {
-        const { admin } = await unauthenticated.admin(boutique.shopDomain);
-        const reponse = await admin.graphql(`#graphql
-          query { shop { email } }
-        `);
-        const json = (await reponse.json()) as { data?: { shop?: { email?: string | null } } };
-        email = json.data?.shop?.email ?? null;
-      }
+      const email = await resoudreEmailBoutique(boutique.shopDomain, boutique.emailRappel);
       if (!email) continue;
 
       const lignes = await listerLignes(boutique.shopDomain, { debut: periode.debut, fin: periode.fin });

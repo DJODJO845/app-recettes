@@ -1,14 +1,25 @@
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { redirect, Form, useLoaderData } from "react-router";
 
 import { login } from "../../shopify.server";
 
 import styles from "./styles.module.css";
 
+export const meta: MetaFunction = () => [{ title: "Recettes URSSAF" }];
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
 
-  if (url.searchParams.get("shop")) {
+  // `shop` seul ne suffit pas : Shopify peut renvoyer ici (ex. clic sur le titre de
+  // l'app dans la nav embarquée) avec `host` ou `embedded` mais sans `shop`, auquel
+  // cas on affichait par erreur la page publique (formulaire "Domaine de la
+  // boutique") au lieu de ramener directement au tableau de bord — bloquant le
+  // marchand dans l'app embarquée (observé en test le 7 octobre 2026).
+  if (
+    url.searchParams.get("shop") ||
+    url.searchParams.get("host") ||
+    url.searchParams.get("embedded")
+  ) {
     throw redirect(`/app?${url.searchParams.toString()}`);
   }
 
@@ -21,7 +32,7 @@ export default function App() {
   return (
     <div className={styles.index}>
       <div className={styles.content}>
-        <h1 className={styles.heading}>Livre des recettes & URSSAF</h1>
+        <h1 className={styles.heading}>Recettes URSSAF</h1>
         <p className={styles.text}>
           Le livre des recettes de votre micro-entreprise généré automatiquement, et
           le montant exact de chiffre d&apos;affaires encaissé à déclarer chaque

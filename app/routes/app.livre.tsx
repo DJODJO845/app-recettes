@@ -1,56 +1,74 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useSearchParams } from "react-router";
 import { useMemo, useRef, useState } from "react";
-import { authenticate } from "../shopify.server";
+import { authenticateAdmin } from "../shopify.server";
 import { listerLignes } from "../lib/db/lignesLivre.server";
-import { libelleModeReglement } from "../lib/domain/livreDesRecettes";
+import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
+import { libelleCanal, libelleModeReglement, LIBELLES_NATURE } from "../lib/domain/livreDesRecettes";
+import { periodeCourante } from "../lib/domain/periode";
+import { debutDeJourParis, finDeJourParis, parseDateISO } from "../lib/domain/fuseauParis";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import type { NatureLigneLivre } from "../lib/domain/types";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
+import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
 
+// Dérivé de LIBELLES_NATURE (pas redéfini en dur ici) pour ne jamais pouvoir dériver
+// de la traduction utilisée ailleurs dans l'app — même souci déjà rencontré et
+// corrigé pour le mode de règlement.
 const NATURE_FILTRES: { value: "TOUTES" | NatureLigneLivre; label: string }[] = [
   { value: "TOUTES", label: "Toutes" },
-  { value: "vente", label: "Vente" },
-  { value: "vente_carte_cadeau", label: "Vente de carte cadeau" },
-  { value: "reglement_carte_cadeau", label: "Règlement par carte cadeau" },
-  { value: "remboursement", label: "Remboursement" },
+  ...(Object.keys(LIBELLES_NATURE) as NatureLigneLivre[]).map((nature) => ({
+    value: nature,
+    label: LIBELLES_NATURE[nature],
+  })),
 ];
-
-const LIBELLES_NATURE: Record<NatureLigneLivre, string> = {
-  vente: "Vente",
-  vente_carte_cadeau: "Vente de carte cadeau",
-  reglement_carte_cadeau: "Règlement par carte cadeau",
-  remboursement: "Remboursement",
-};
 
 const BADGE_NATURE = {
   vente: { tone: "success", icon: "check-circle-filled" },
   vente_carte_cadeau: { tone: "info", icon: "gift-card" },
   reglement_carte_cadeau: { tone: "info", icon: "gift-card" },
-  remboursement: { tone: "critical", icon: "arrow-left" },
-} as const satisfies Record<NatureLigneLivre, { tone: "success" | "info" | "critical"; icon: string }>;
-
-const formateurEUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
-const formateurDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
+  // "warning" plutôt que "critical" : un remboursement est un événement normal en
+  // comptabilité, pas une erreur système — "critical" (rouge vif, déjà utilisé pour le
+  // montant négatif juste en dessous) double le signal d'alarme pour quelque chose de
+  // banal.
+  remboursement: { tone: "warning", icon: "arrow-left" },
+} as const satisfies Record<NatureLigneLivre, { tone: "success" | "info" | "warning"; icon: string }>;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateAdmin(request);
   const url = new URL(request.url);
   const debutParam = url.searchParams.get("debut");
   const finParam = url.searchParams.get("fin");
+  const afficheTout = url.searchParams.get("tout") === "1";
 
-  const periode =
-    debutParam && finParam
-      ? { debut: new Date(debutParam), fin: new Date(`${finParam}T23:59:59`) }
-      : undefined;
+  let periode: { debut: Date; fin: Date; label: string } | undefined;
+  if (debutParam && finParam) {
+    // Interprétés en heure de Paris (pas UTC ni heure du serveur, cf.
+    // lib/domain/fuseauParis.ts) : le marchand choisit des dates calendaires
+    // françaises dans le sélecteur, pas des instants UTC.
+    const debut = debutDeJourParis(...parseDateISO(debutParam));
+    const fin = finDeJourParis(...parseDateISO(finParam));
+    periode = {
+      debut,
+      fin,
+      label: `du ${formateurDate.format(debut)} au ${formateurDate.format(fin)}`,
+    };
+  } else if (!afficheTout) {
+    // Par défaut, on limite à la période de déclaration en cours plutôt que de
+    // charger tout l'historique d'un coup (potentiellement des années de
+    // commandes) : la page reste rapide même pour une boutique active depuis
+    // longtemps. "Voir tout l'historique" reste un choix explicite.
+    const boutique = await obtenirOuCreerBoutique(session.shop);
+    periode = periodeCourante(boutique.periodicite);
+  }
 
   const lignes = await listerLignes(session.shop, periode);
 
-  return { lignes };
+  return { lignes, periodeAffichee: periode ?? null, afficheTout };
 };
 
 export default function LivreDesRecettes() {
-  const { lignes } = useLoaderData<typeof loader>();
+  const { lignes, periodeAffichee, afficheTout } = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- type du custom element non exposé pour un ref direct
   const debutRef = useRef<any>(null);
@@ -74,8 +92,15 @@ export default function LivreDesRecettes() {
     [lignes, natureFiltre, modeFiltre],
   );
 
+  // Exclut les lignes où compteDansCA est faux (règlement par carte cadeau : l'argent
+  // a déjà été compté au moment de la vente de la carte, cf. construireLignesLivre) —
+  // même règle que calculerCAPeriode, sans quoi ce total afficherait un CA supérieur
+  // au vrai CA encaissé dès qu'une carte cadeau a été utilisée comme moyen de paiement.
   const total = useMemo(
-    () => lignesFiltrees.reduce((somme, ligne) => somme + ligne.montant, 0),
+    () =>
+      lignesFiltrees
+        .filter((ligne) => ligne.compteDansCA)
+        .reduce((somme, ligne) => somme + ligne.montant, 0),
     [lignesFiltrees],
   );
 
@@ -122,9 +147,28 @@ export default function LivreDesRecettes() {
       </s-section>
 
       <s-section>
-        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-          <s-text type="strong">{lignesFiltrees.length} ligne(s)</s-text>
-          <s-text type="strong" tone="success">Total : {formateurEUR.format(total)}</s-text>
+        <s-stack direction="block" gap="small-200">
+          <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+            <s-text type="strong">{lignesFiltrees.length} ligne(s)</s-text>
+            <s-text type="strong" tone="success">Total : {formateurEUR.format(total)}</s-text>
+          </s-stack>
+          <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+            <s-text color="subdued">
+              {afficheTout
+                ? "Tout l'historique affiché."
+                : periodeAffichee
+                  ? `Période affichée : ${periodeAffichee.label}.`
+                  : null}
+            </s-text>
+            <s-stack direction="inline" gap="base">
+              {(afficheTout || searchParams.get("debut")) && (
+                <s-link href="/app/livre">Revenir à la période en cours</s-link>
+              )}
+              {!afficheTout && (
+                <s-link href="/app/livre?tout=1">Voir tout l&apos;historique</s-link>
+              )}
+            </s-stack>
+          </s-stack>
         </s-stack>
       </s-section>
 
@@ -159,12 +203,16 @@ export default function LivreDesRecettes() {
                         {LIBELLES_NATURE[ligne.nature]}
                       </s-badge>
                       {!ligne.compteDansCA && (
-                        <s-text color="subdued">Déjà comptée à l&apos;achat de la carte</s-text>
+                        <s-text color="subdued">
+                          {ligne.nature === "remboursement"
+                            ? "Remboursé en avoir/carte cadeau : aucun argent sorti de votre compte"
+                            : "Déjà comptée à l'achat de la carte"}
+                        </s-text>
                       )}
                     </s-stack>
                   </s-table-cell>
                   <s-table-cell>{libelleModeReglement(ligne.modeReglement)}</s-table-cell>
-                  <s-table-cell>{ligne.canal}</s-table-cell>
+                  <s-table-cell>{libelleCanal(ligne.canal)}</s-table-cell>
                   <s-table-cell>
                     <s-text tone={ligne.montant < 0 ? "critical" : "success"} type="strong">
                       {formateurEUR.format(ligne.montant)}

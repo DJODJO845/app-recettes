@@ -1,4 +1,5 @@
 import type { MetaFunction } from "react-router";
+import { CONTACT_EMAIL } from "../lib/ui/contact";
 
 /**
  * Route publique (pas de authenticate.admin) : c'est l'URL à renseigner dans
@@ -7,22 +8,38 @@ import type { MetaFunction } from "react-router";
  */
 export const meta: MetaFunction = () => [
   { title: "Politique de confidentialité — Recettes URSSAF" },
+  { name: "color-scheme", content: "light" },
 ];
 
-const CONTACT_EMAIL = "jonathan-8495@hotmail.com";
 const DERNIERE_MISE_A_JOUR = "20 septembre 2026";
+
+// Page publique consultée hors de l'iframe Shopify Admin (navigateur mobile
+// normal) : le mode sombre forcé de certains navigateurs/OS peut rendre le
+// texte illisible s'il ne repose que sur l'héritage CSS plutôt que sur des
+// couleurs explicites — même bug déjà rencontré sur la version imprimable du
+// livre (app.export.imprimer.tsx), corrigé de la même façon ici.
+const styleForceCouleursClaires = `
+  html { background: #ffffff !important; color-scheme: light; }
+  * { color: #1a1a1a !important; }
+  a { color: #0E6B5C !important; }
+  body { background: #ffffff !important; }
+`;
 
 export default function PolitiqueConfidentialite() {
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1rem", fontFamily: "sans-serif", color: "#1a1a1a", background: "#ffffff" }}>
+      <style>{styleForceCouleursClaires}</style>
       <h1>Politique de confidentialité — Recettes URSSAF</h1>
       <p>Dernière mise à jour : {DERNIERE_MISE_A_JOUR}</p>
 
       <h2>Qui sommes-nous</h2>
       <p>
-        « Recettes URSSAF » est une application Shopify éditée à titre
-        individuel. Pour toute question sur cette politique ou sur vos
-        données, contactez : <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+        « Recettes URSSAF » est une application Shopify éditée par Jonathan
+        Larue, entrepreneur individuel (SIRET 900 961 939 00015, RCS
+        Clermont-Ferrand), 94 avenue de Châtel-Guyon, 63200
+        Saint-Bonnet-près-Riom, France. Pour toute question sur cette
+        politique ou sur vos données, contactez :{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </p>
 
       <h2>Ce que l&apos;app fait</h2>

@@ -1,15 +1,34 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { authenticate } from "../shopify.server";
+import { authenticateAdmin } from "../shopify.server";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
+import { CONTACT_EMAIL } from "../lib/ui/contact";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  await authenticateAdmin(request);
   return null;
 };
 
 export default function MentionsLegales() {
   return (
     <s-page heading="Mentions légales">
+      <s-section heading="Éditeur">
+        <s-paragraph>
+          Jonathan Larue, entrepreneur individuel (SIRET 900 961 939 00015, RCS Clermont-Ferrand).
+        </s-paragraph>
+        <s-paragraph>94 avenue de Châtel-Guyon, 63200 Saint-Bonnet-près-Riom, France.</s-paragraph>
+        <s-paragraph>TVA non applicable, article 293 B du CGI.</s-paragraph>
+        <s-paragraph>
+          Contact : <s-link href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</s-link>.
+        </s-paragraph>
+      </s-section>
+
+      <s-section heading="Hébergeur">
+        <s-paragraph>
+          Render Services, Inc. — 525 Brannan Street Ste 300, San Francisco, CA
+          94107, États-Unis. Téléphone : +1 415-319-8186. Email : legal@render.com.
+        </s-paragraph>
+      </s-section>
+
       <s-section>
         <s-paragraph>
           <s-text type="strong">Cette app est une aide, elle ne remplace pas un expert-comptable.</s-text>
