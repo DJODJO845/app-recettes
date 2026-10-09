@@ -6,6 +6,11 @@
   width: 100%;
   text-align: center;
   padding: 1rem;
+  /* La police Inter est chargée (root.tsx), mais rien ici ne demandait à s'en servir :
+     cette page publique (pas de composants Polaris, qui l'appliquent eux-mêmes)
+     retombait donc sur le serif par défaut du navigateur, détonnant avec le reste
+     de l'app — repéré en test réel le 9 octobre 2026. */
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .heading,
