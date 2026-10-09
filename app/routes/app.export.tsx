@@ -57,7 +57,11 @@ async function urlAutorisee(
 ) {
   const token = await shopify.idToken();
   const params = new URLSearchParams({ shop, host, embedded: "1", id_token: token });
-  return `${chemin}?${params.toString()}`;
+  // `chemin` peut déjà porter son propre paramètre (ex. "...declaration?periode=-1") :
+  // un "?" supplémentaire casserait le parsing (shop/host/id_token finiraient noyés
+  // dans la valeur du premier paramètre). D'où ce choix du bon séparateur.
+  const separateur = chemin.includes("?") ? "&" : "?";
+  return `${chemin}${separateur}${params.toString()}`;
 }
 
 function exporterCSV(shopify: ReturnType<typeof useAppBridge>, shop: string, host: string) {
