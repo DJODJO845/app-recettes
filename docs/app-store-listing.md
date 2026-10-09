@@ -21,7 +21,21 @@ Le livre des recettes et le CA réellement encaissé, calculés seuls pour votre
 2. Alertes avant d'atteindre le plafond, avec projection de la date
 3. Export CSV, version imprimable et fiche de déclaration prêtes à l'emploi
 
-## Description longue
+## Description — champ réel "App details" (≤ 500 caractères)
+
+D'après la checklist officielle Shopify (shopify.dev/docs/apps/launch/app-requirements-checklist),
+le champ "App details" du Partner Dashboard est limité à **500 caractères**, pas les ~1800
+de la version longue ci-dessous (gardée comme brouillon de travail, pas à coller telle quelle).
+
+> Recettes URSSAF calcule automatiquement votre CA réellement encaissé (remboursements,
+> avoirs et cartes cadeaux pris en compte), pas seulement vos commandes facturées.
+> Tableau de bord avec comparaison à l'an dernier et projection de votre plafond,
+> alertes à 80 % et 95 %, export CSV, version imprimable et fiche de déclaration prête
+> à l'emploi. 9,99 €/mois, 7 jours d'essai gratuit.
+
+(392 caractères — marge pour ajuster si besoin.)
+
+## Description longue (brouillon de travail — sert à la version courte ci-dessus, pas à coller)
 
 **Tenir un livre des recettes à jour est une obligation légale pour tout
 auto-entrepreneur — et la calculer à la main depuis vos commandes Shopify est source
@@ -65,8 +79,16 @@ déclaration, micro-entreprise
 
 ## À vérifier avant soumission
 
-- Limites de caractères exactes du Partner Dashboard pour l'introduction et les points
-  forts (elles évoluent parfois côté Shopify).
+- Limites confirmées (checklist officielle Shopify, 9 octobre 2026) : introduction
+  100 caractères, chaque point fort 80 caractères, description "App details"
+  500 caractères — toutes respectées dans ce brouillon.
 - Que l'usage du nom « URSSAF » dans le nom de l'app ne pose pas de souci de marque côté
   revue Shopify (organisme public, pas une marque déposée à ma connaissance, mais à
   confirmer si un refus mentionne ce point).
+
+## Édition pendant la review
+
+La fiche App Store ne peut pas être modifiée tant que l'app est "En cours d'examen"
+dans le Partner Dashboard (confirmé le 9 octobre 2026). Ce brouillon reste donc en
+attente : à coller dès que l'édition redevient possible (après la décision de review,
+approbation ou refus).
