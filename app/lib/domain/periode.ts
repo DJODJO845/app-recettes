@@ -1,4 +1,11 @@
-import { composantesParis, debutDeJourParis, finDeJourParis, nombreJoursDuMois, veilleCalendaire } from "./fuseauParis";
+import {
+  composantesParis,
+  debutDeJourParis,
+  finDeJourParis,
+  nombreJoursDuMois,
+  normaliserAnneeMois,
+  veilleCalendaire,
+} from "./fuseauParis";
 
 export interface PeriodeCourante {
   debut: Date;
@@ -47,6 +54,34 @@ function periodeDepuisComposantes(
 export function periodeCourante(periodicite: "MENSUELLE" | "TRIMESTRIELLE", maintenant = new Date()): PeriodeCourante {
   const { annee, mois } = composantesParis(maintenant);
   return periodeDepuisComposantes(periodicite, annee, mois);
+}
+
+/**
+ * Période de déclaration décalée de `decalage` périodes par rapport à la période en
+ * cours (0 = en cours, -1 = précédente, -2 = encore avant...) — pour naviguer entre
+ * périodes dans l'export de déclaration, sans dupliquer les règles mois/trimestre
+ * déjà posées dans periodeDepuisComposantes.
+ */
+export function periodeDecalee(
+  periodicite: "MENSUELLE" | "TRIMESTRIELLE",
+  decalage: number,
+  maintenant = new Date(),
+): PeriodeCourante {
+  const { annee, mois } = composantesParis(maintenant);
+  const pas = periodicite === "MENSUELLE" ? 1 : 3;
+  const { annee: anneeDecalee, mois: moisDecale } = normaliserAnneeMois(annee, mois + decalage * pas);
+  return periodeDepuisComposantes(periodicite, anneeDecalee, moisDecale);
+}
+
+/**
+ * Interprète le paramètre d'URL `periode` (décalage choisi par le marchand, ex. dans
+ * l'export de déclaration) en un entier valide pour periodeDecalee : jamais au-delà
+ * de la période en cours (0, une période future n'a pas encore de CA à montrer), et
+ * -1 par défaut — la période qui vient de se terminer, celle qu'on déclare normalement.
+ */
+export function decalagePeriodeDepuisParam(valeur: string | null): number {
+  const brut = Number(valeur ?? "-1");
+  return Number.isFinite(brut) ? Math.min(0, Math.trunc(brut)) : -1;
 }
 
 export interface VerificationEcheance {

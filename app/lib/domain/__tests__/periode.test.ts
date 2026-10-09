@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { periodeCourante, periodeVientDeSeTerminer } from "../periode";
+import { decalagePeriodeDepuisParam, periodeCourante, periodeDecalee, periodeVientDeSeTerminer } from "../periode";
 import { composantesParis } from "../fuseauParis";
 
 describe("periodeCourante", () => {
@@ -56,5 +56,57 @@ describe("periodeVientDeSeTerminer", () => {
     const lendemainDuChangementDHeure = new Date("2026-10-26T05:00:00.000Z");
     const { estDue } = periodeVientDeSeTerminer("MENSUELLE", lendemainDuChangementDHeure);
     expect(estDue).toBe(false); // le 25 n'est pas le dernier jour d'octobre
+  });
+});
+
+describe("periodeDecalee", () => {
+  it("un décalage de 0 redonne la période en cours", () => {
+    const maintenant = new Date(Date.UTC(2026, 8, 15));
+    expect(periodeDecalee("MENSUELLE", 0, maintenant)).toEqual(periodeCourante("MENSUELLE", maintenant));
+  });
+
+  it("décale d'un mois en arrière pour une périodicité mensuelle", () => {
+    const periode = periodeDecalee("MENSUELLE", -1, new Date(Date.UTC(2026, 8, 15)));
+    expect(composantesParis(periode.debut)).toEqual({ annee: 2026, mois: 7, jour: 1 });
+    expect(periode.label).toContain("août");
+  });
+
+  it("décale d'un trimestre en arrière pour une périodicité trimestrielle", () => {
+    const periode = periodeDecalee("TRIMESTRIELLE", -1, new Date(Date.UTC(2026, 8, 15)));
+    expect(periode.label).toBe("T2 2026");
+  });
+
+  it("traverse correctement la frontière d'année en arrière", () => {
+    const periode = periodeDecalee("MENSUELLE", -2, new Date(Date.UTC(2026, 0, 15)));
+    expect(composantesParis(periode.debut)).toEqual({ annee: 2025, mois: 10, jour: 1 });
+    expect(periode.label).toContain("2025");
+  });
+
+  it("traverse correctement la frontière d'année en avant", () => {
+    const periode = periodeDecalee("TRIMESTRIELLE", 1, new Date(Date.UTC(2026, 10, 15)));
+    expect(periode.label).toBe("T1 2027");
+  });
+});
+
+describe("decalagePeriodeDepuisParam", () => {
+  it("vaut -1 par défaut (la période qui vient de se terminer)", () => {
+    expect(decalagePeriodeDepuisParam(null)).toBe(-1);
+  });
+
+  it("accepte un décalage négatif valide", () => {
+    expect(decalagePeriodeDepuisParam("-3")).toBe(-3);
+  });
+
+  it("plafonne à 0, jamais une période future", () => {
+    expect(decalagePeriodeDepuisParam("5")).toBe(0);
+    expect(decalagePeriodeDepuisParam("0")).toBe(0);
+  });
+
+  it("retombe sur -1 pour une valeur non numérique", () => {
+    expect(decalagePeriodeDepuisParam("abc")).toBe(-1);
+  });
+
+  it("tronque une valeur décimale", () => {
+    expect(decalagePeriodeDepuisParam("-2.7")).toBe(-2);
   });
 });

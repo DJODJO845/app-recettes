@@ -3,6 +3,7 @@ import { useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticateAdmin } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
+import { decalagePeriodeDepuisParam, periodeDecalee } from "../lib/domain/periode";
 import { MentionLegale } from "../lib/ui/MentionLegale";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 import { CercleIcone } from "../lib/ui/CercleIcone";
@@ -17,7 +18,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // que Shopify lui-même utilise (cf. sanitizeHost dans @shopify/shopify-api).
   const host = Buffer.from(`${session.shop}/admin`).toString("base64");
   const boutique = await obtenirOuCreerBoutique(session.shop);
-  return { shop: session.shop, host, derniereExportation: boutique.derniereExportation };
+
+  const url = new URL(request.url);
+  const decalagePeriode = decalagePeriodeDepuisParam(url.searchParams.get("periode"));
+  const periodeLabel = periodeDecalee(boutique.periodicite, decalagePeriode).label;
+
+  return {
+    shop: session.shop,
+    host,
+    derniereExportation: boutique.derniereExportation,
+    decalagePeriode,
+    periodeLabel,
+  };
 };
 
 /**
@@ -74,8 +86,21 @@ function exporterPDF(shopify: ReturnType<typeof useAppBridge>, shop: string, hos
     });
 }
 
+function voirDeclaration(shopify: ReturnType<typeof useAppBridge>, shop: string, host: string, decalagePeriode: number) {
+  shopify.toast.show("Préparation de la déclaration…");
+  urlAutorisee(shopify, shop, host, `/app/export/declaration?periode=${decalagePeriode}`)
+    .then((url) => {
+      const fenetre = window.open(url, "_blank");
+      if (!fenetre) throw new Error("pop-up bloquée par le navigateur");
+    })
+    .catch((erreur) => {
+      console.error(erreur);
+      shopify.toast.show(`Erreur déclaration : ${String(erreur?.message ?? erreur)}`, { isError: true, duration: 8000 });
+    });
+}
+
 export default function Export() {
-  const { shop, host, derniereExportation } = useLoaderData<typeof loader>();
+  const { shop, host, derniereExportation, decalagePeriode, periodeLabel } = useLoaderData<typeof loader>();
   const shopify = useAppBridge();
 
   return (
@@ -124,6 +149,38 @@ export default function Export() {
             </s-stack>
           </s-box>
         </s-stack>
+      </s-section>
+
+      <s-section heading="Déclaration de la période">
+        <s-box padding="large" borderWidth="base" borderRadius="large" background="subdued">
+          <s-stack direction="block" gap="base">
+            <s-stack direction="inline" gap="small-300" alignItems="center">
+              <CercleIcone type="calendar-check" tone="info" fond="var(--tinte-info)" />
+              <s-text type="strong">Fiche de déclaration</s-text>
+            </s-stack>
+            <s-text color="subdued">
+              Une page avec uniquement le montant à recopier dans votre
+              déclaration URSSAF pour une période donnée — plus rapide à
+              consulter que le livre complet au moment de déclarer.
+            </s-text>
+            <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+              <s-link href={`/app/export?periode=${decalagePeriode - 1}`}>← Période précédente</s-link>
+              <s-text type="strong">{periodeLabel}</s-text>
+              {decalagePeriode < 0 ? (
+                <s-link href={`/app/export?periode=${decalagePeriode + 1}`}>Période suivante →</s-link>
+              ) : (
+                <s-text color="subdued">Période suivante →</s-text>
+              )}
+            </s-stack>
+            <s-button
+              onClick={() => voirDeclaration(shopify, shop, host, decalagePeriode)}
+              icon="calendar-check"
+              variant="primary"
+            >
+              Voir la déclaration
+            </s-button>
+          </s-stack>
+        </s-box>
       </s-section>
 
       <MentionLegale />
