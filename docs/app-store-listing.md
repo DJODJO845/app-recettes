@@ -18,8 +18,8 @@ Le livre des recettes et le CA réellement encaissé, calculés seuls pour votre
 ## Points forts (3 x ≤ 80 caractères)
 
 1. Calcul automatique du CA réellement encaissé, remboursements et avoirs inclus
-2. Export CSV et version imprimable, prêts pour vous ou votre expert-comptable
-3. Rappel automatique avant chaque échéance de déclaration URSSAF
+2. Alertes avant d'atteindre le plafond, avec projection de la date
+3. Export CSV, version imprimable et fiche de déclaration prêtes à l'emploi
 
 ## Description longue
 
@@ -39,16 +39,21 @@ plus souvent une déclaration faite à la main :
 
 **Ce que vous obtenez :**
 
-- Un tableau de bord avec le CA encaissé du mois en cours (accès gratuit).
+- Un tableau de bord avec le CA encaissé de la période en cours, la comparaison avec
+  l'année dernière à la même date, et une projection de la date à laquelle vous
+  atteindriez votre plafond au rythme actuel.
 - Le livre des recettes complet, période par période (mensuelle ou trimestrielle selon
   votre régime).
-- Un export CSV et une version imprimable, à garder pour vous ou à transmettre à votre
-  expert-comptable.
+- Des alertes automatiques par email dès que vous franchissez 80 % puis 95 % de votre
+  plafond annuel, pour anticiper avant qu'il ne soit trop tard.
 - Un rappel automatique par email avant chaque échéance de déclaration, pour ne jamais
   la manquer.
+- Un export CSV et une version imprimable du livre complet, à garder pour vous ou à
+  transmettre à votre expert-comptable.
+- Une fiche de déclaration dédiée à chaque période : uniquement le montant à recopier
+  dans votre déclaration URSSAF, sans avoir à rouvrir tout le livre.
 
-**Tarifs :** gratuit pour consulter le mois en cours. La formule Pro (livre complet,
-exports, rappels) est à 9,99 €/mois, avec 7 jours d'essai gratuit.
+**Tarifs :** 9,99 €/mois, avec 7 jours d'essai gratuit, sans engagement.
 
 Vos données restent isolées par boutique et sont supprimées automatiquement en cas de
 désinstallation, conformément au RGPD.
