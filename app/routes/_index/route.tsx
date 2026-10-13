@@ -41,20 +41,68 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return { showForm: Boolean(login) };
 };
 
+/**
+ * Icônes maison (traits simples, pas une librairie) : cohérentes entre elles (même
+ * épaisseur, mêmes angles arrondis), légères (pas de dépendance), et faciles à
+ * recolorer avec currentColor pour suivre la teinte de chaque carte.
+ */
+function IconeLivre() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5.5C4 4.67 4.67 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5v-13Z" />
+      <path d="M20 5.5c0-.83-.67-1.5-1.5-1.5H13v16h5.5c.83 0 1.5-.67 1.5-1.5v-13Z" />
+      <path d="M13 7.5h4.5M13 11h4.5M13 14.5h4.5" />
+    </svg>
+  );
+}
+
+function IconeMontant() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M12 7.5v9M9.25 15c0 1.1 1.23 2 2.75 2s2.75-.9 2.75-2c0-1.38-1.23-1.88-2.75-2.25C10.23 12.38 9 11.88 9 10.5c0-1.1 1.23-2 2.75-2s2.75.9 2.75 2" />
+    </svg>
+  );
+}
+
+function IconeJauge() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 15a8 8 0 1 1 16 0" />
+      <path d="M12 15l3.5-4.5" />
+      <path d="M8 19.5h8" />
+    </svg>
+  );
+}
+
+function IconeExport() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3.5v11" />
+      <path d="M8 10.5 12 14.5 16 10.5" />
+      <path d="M4.5 15v3.5c0 .83.67 1.5 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5V15" />
+    </svg>
+  );
+}
+
 const FONCTIONNALITES = [
   {
+    Icone: IconeLivre,
     titre: "Livre des recettes automatique",
     texte: "Généré depuis vos commandes, paiements et remboursements Shopify — chronologique et conforme, sans rien saisir à la main.",
   },
   {
+    Icone: IconeMontant,
     titre: "Le bon montant, pas une estimation",
     texte: "Calculé selon le principe d'encaissement : remboursements déduits, cartes cadeaux exclues tant qu'elles ne sont pas utilisées.",
   },
   {
+    Icone: IconeJauge,
     titre: "Alertes avant le plafond",
     texte: "Suivi en continu de votre CA annuel, avec projection de la date à laquelle vous l'atteindriez au rythme actuel.",
   },
   {
+    Icone: IconeExport,
     titre: "Export et déclaration prêts",
     texte: "CSV, version imprimable et fiche de déclaration par période — tout ce qu'il faut au moment de déclarer.",
   },
@@ -66,41 +114,52 @@ export default function App() {
   return (
     <div className={styles.page}>
       <header className={styles.hero}>
-        <p className={styles.eyebrow}>Pour les micro-entrepreneurs qui vendent sur Shopify</p>
-        <h1 className={styles.heading}>Le chiffre d&apos;affaires encaissé de votre boutique, calculé seul</h1>
-        <p className={styles.sousTitre}>
-          Le livre des recettes de votre micro-entreprise se génère automatiquement, et
-          le montant exact à déclarer à l&apos;URSSAF chaque période est toujours sous
-          les yeux — sans tableur, sans recompter à la main.
-        </p>
-        <div className={styles.cta}>
-          <a className={styles.bouton} href={URL_APP_STORE} target="_blank" rel="noreferrer">
-            Installer sur Shopify
-          </a>
-          <p className={styles.prix}>9,99 €/mois · 7 jours d&apos;essai gratuit</p>
+        <div aria-hidden="true" className={styles.heroFond} />
+        <div className={styles.heroContenu}>
+          <p className={styles.eyebrow}>Pour les micro-entrepreneurs qui vendent sur Shopify</p>
+          <h1 className={styles.heading}>Le chiffre d&apos;affaires encaissé de votre boutique, calculé seul</h1>
+          <p className={styles.sousTitre}>
+            Le livre des recettes de votre micro-entreprise se génère automatiquement, et
+            le montant exact à déclarer à l&apos;URSSAF chaque période est toujours sous
+            les yeux — sans tableur, sans recompter à la main.
+          </p>
+          <div className={styles.cta}>
+            <a className={styles.bouton} href={URL_APP_STORE} target="_blank" rel="noreferrer">
+              Installer sur Shopify
+            </a>
+            <p className={styles.prix}>9,99 €/mois · 7 jours d&apos;essai gratuit</p>
+          </div>
         </div>
       </header>
 
-      <section className={styles.fonctionnalites} aria-label="Fonctionnalités">
-        {FONCTIONNALITES.map((fonctionnalite) => (
-          <div key={fonctionnalite.titre} className={styles.carte}>
-            <h2 className={styles.carteTitre}>{fonctionnalite.titre}</h2>
-            <p className={styles.carteTexte}>{fonctionnalite.texte}</p>
-          </div>
-        ))}
-      </section>
+      <main className={styles.corps}>
+        <section className={styles.fonctionnalites} aria-label="Fonctionnalités">
+          {FONCTIONNALITES.map(({ Icone, titre, texte }) => (
+            <div key={titre} className={styles.carte}>
+              <div className={styles.carteIcone}>
+                <Icone />
+              </div>
+              <h2 className={styles.carteTitre}>{titre}</h2>
+              <p className={styles.carteTexte}>{texte}</p>
+            </div>
+          ))}
+        </section>
 
-      <section className={styles.pourquoi}>
-        <h2 className={styles.sectionTitre}>Pourquoi pas juste un tableur ?</h2>
-        <p className={styles.sectionTexte}>
-          Le CA à déclarer est celui <strong>réellement encaissé</strong>, pas celui de
-          vos commandes facturées — et la différence piège souvent une déclaration
-          faite à la main : un remboursement partiel, un paiement en plusieurs fois,
-          une carte cadeau vendue puis utilisée plus tard. L&apos;app applique ces
-          règles pour vous, à chaque commande, sans que vous ayez à les connaître par
-          cœur.
-        </p>
-      </section>
+        <section className={styles.pourquoi}>
+          <p className={styles.pourquoiMarque} aria-hidden="true">
+            &ldquo;
+          </p>
+          <h2 className={styles.sectionTitre}>Pourquoi pas juste un tableur ?</h2>
+          <p className={styles.sectionTexte}>
+            Le CA à déclarer est celui <strong>réellement encaissé</strong>, pas celui de
+            vos commandes facturées — et la différence piège souvent une déclaration
+            faite à la main : un remboursement partiel, un paiement en plusieurs fois,
+            une carte cadeau vendue puis utilisée plus tard. L&apos;app applique ces
+            règles pour vous, à chaque commande, sans que vous ayez à les connaître par
+            cœur.
+          </p>
+        </section>
+      </main>
 
       <footer className={styles.pied}>
         {showForm && (
