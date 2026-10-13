@@ -4,9 +4,9 @@ import { authenticateAdmin } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
 import {
   obtenirMeilleuresVentes,
-  obtenirTauxRemboursement,
+  obtenirProduitsRembourses,
+  obtenirTotalRembourse,
   obtenirTotalVentes,
-  type MeilleureVente,
 } from "../lib/db/articlesVendus.server";
 import {
   decalageAnneeDepuisParam,
@@ -57,13 +57,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     periodeLabel = periode.label;
   }
 
-  const [meilleuresVentes, totalVentes, tauxRemboursement] = await Promise.all([
+  const [meilleuresVentes, totalVentes, produitsRembourses, totalRembourse] = await Promise.all([
     obtenirMeilleuresVentes(session.shop, debut, fin, NOMBRE_MEILLEURES_VENTES),
     obtenirTotalVentes(session.shop, debut, fin),
-    obtenirTauxRemboursement(session.shop, debut, fin, NOMBRE_PRODUITS_REMBOURSEMENT),
+    obtenirProduitsRembourses(session.shop, debut, fin, NOMBRE_PRODUITS_REMBOURSEMENT),
+    obtenirTotalRembourse(session.shop, debut, fin),
   ]);
 
-  return { vue, decalage, periodeLabel, meilleuresVentes, totalVentes, tauxRemboursement };
+  return { vue, decalage, periodeLabel, meilleuresVentes, totalVentes, produitsRembourses, totalRembourse };
 };
 
 interface Tranche {
@@ -81,23 +82,29 @@ function libelleVente(vente: { titreProduit: string; titreVariante: string | nul
 }
 
 /**
- * Regroupe les meilleures ventes en tranches de camembert : les N premières
- * individuellement, le reste (au-delà de NOMBRE_TRANCHES_CAMEMBERT, ou simplement non
- * demandé à obtenirMeilleuresVentes) cumulé dans "Autres" — calculé à partir du vrai
- * total de la période (obtenirTotalVentes), pas de la seule somme du top affiché,
- * pour que les pourcentages reflètent 100% des ventes même si "Autres" existe.
+ * Regroupe une liste (meilleures ventes OU produits remboursés) en tranches de
+ * camembert : les N premières individuellement, le reste (au-delà de
+ * NOMBRE_TRANCHES_CAMEMBERT, ou simplement non ramené par la requête) cumulé dans
+ * "Autres" — calculé à partir du vrai total de la période (pas de la seule somme du
+ * top affiché), pour que les pourcentages reflètent 100% même si "Autres" existe.
+ * Générique aux deux usages : un camembert part-à-tout n'a de sens que pour une
+ * grandeur qui s'additionne à 100% entre produits (CA, ou ici montant remboursé) —
+ * jamais pour un taux individuel par produit (voir discussion du 13 octobre 2026).
  */
-function construireTranches(meilleuresVentes: MeilleureVente[], totalVentes: number): Tranche[] {
-  if (totalVentes <= 0) return [];
+function construireTranches(
+  elements: { titreProduit: string; titreVariante: string | null; montant: number }[],
+  total: number,
+): Tranche[] {
+  if (total <= 0) return [];
 
-  const top = meilleuresVentes.slice(0, NOMBRE_TRANCHES_CAMEMBERT);
-  const montantTop = top.reduce((somme, vente) => somme + vente.montant, 0);
-  const montantAutres = totalVentes - montantTop;
+  const top = elements.slice(0, NOMBRE_TRANCHES_CAMEMBERT);
+  const montantTop = top.reduce((somme, element) => somme + element.montant, 0);
+  const montantAutres = total - montantTop;
 
-  const tranches: Tranche[] = top.map((vente, index) => ({
-    label: libelleVente(vente),
-    montant: vente.montant,
-    pourcentage: (vente.montant / totalVentes) * 100,
+  const tranches: Tranche[] = top.map((element, index) => ({
+    label: libelleVente(element),
+    montant: element.montant,
+    pourcentage: (element.montant / total) * 100,
     couleur: `var(${COULEURS_SERIES[index]})`,
   }));
 
@@ -105,7 +112,7 @@ function construireTranches(meilleuresVentes: MeilleureVente[], totalVentes: num
     tranches.push({
       label: "Autres",
       montant: montantAutres,
-      pourcentage: (montantAutres / totalVentes) * 100,
+      pourcentage: (montantAutres / total) * 100,
       couleur: "var(--serie-autres)",
     });
   }
@@ -124,6 +131,54 @@ function degradeConique(tranches: Tranche[]): string {
   return `conic-gradient(${segments.join(", ")})`;
 }
 
+/** Camembert (donut) réutilisé pour les meilleures ventes et les produits remboursés. */
+function Camembert({ tranches, total, libelleTotal }: { tranches: Tranche[]; total: number; libelleTotal: string }) {
+  if (tranches.length === 0) return null;
+
+  return (
+    <s-stack direction="block" gap="base">
+      <div style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}>
+        <div style={{ position: "relative", width: "180px", height: "180px" }}>
+          <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: degradeConique(tranches) }} />
+          {/* Anneau central (donut, pas un camembert plein) : place le total au centre
+              de ce que le marchand regarde déjà, plutôt qu'un chiffre séparé ailleurs. */}
+          <div
+            style={{
+              position: "absolute",
+              inset: "28px",
+              borderRadius: "50%",
+              background: "var(--fond-camembert)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+            }}
+          >
+            <s-text color="subdued">{libelleTotal}</s-text>
+            <s-text type="strong">{formateurEUR.format(total)}</s-text>
+          </div>
+        </div>
+      </div>
+
+      <s-stack direction="block" gap="small-300">
+        {tranches.map((tranche) => (
+          <s-stack key={tranche.label} direction="inline" justifyContent="space-between" alignItems="center">
+            <s-stack direction="inline" gap="small-200" alignItems="center">
+              <div style={{ width: "12px", height: "12px", borderRadius: "3px", background: tranche.couleur, flexShrink: 0 }} />
+              <s-text>{tranche.label}</s-text>
+            </s-stack>
+            <s-stack direction="inline" gap="small-200" alignItems="center">
+              <s-text color="subdued">{tranche.pourcentage.toFixed(1)} %</s-text>
+              <s-text type="strong">{formateurEUR.format(tranche.montant)}</s-text>
+            </s-stack>
+          </s-stack>
+        ))}
+      </s-stack>
+    </s-stack>
+  );
+}
+
 function lienVue(vue: Vue, decalage: number): string {
   // "vue=periode" explicite nécessaire même si c'est la valeur non-"annee" : le défaut
   // du loader est "annee" (voir plus haut), donc un lien sans ce paramètre y
@@ -132,8 +187,12 @@ function lienVue(vue: Vue, decalage: number): string {
 }
 
 export default function Statistiques() {
-  const { vue, decalage, periodeLabel, meilleuresVentes, totalVentes, tauxRemboursement } = useLoaderData<typeof loader>();
+  const { vue, decalage, periodeLabel, meilleuresVentes, totalVentes, produitsRembourses, totalRembourse } = useLoaderData<typeof loader>();
   const tranches = construireTranches(meilleuresVentes, totalVentes);
+  const tranchesRembourses = construireTranches(
+    produitsRembourses.map((produit) => ({ ...produit, montant: produit.montantRembourse })),
+    totalRembourse,
+  );
 
   return (
     <s-page heading="Statistiques">
@@ -192,47 +251,7 @@ export default function Statistiques() {
               </s-stack>
             </s-box>
           ) : (
-            <s-stack direction="block" gap="base">
-              <div style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}>
-                <div style={{ position: "relative", width: "180px", height: "180px" }}>
-                  <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: degradeConique(tranches) }} />
-                  {/* Anneau central (donut, pas un camembert plein) : place le CA total,
-                      le chiffre que le marchand regarde en premier, au centre de ce qu'il
-                      regarde déjà — plutôt qu'un chiffre séparé ailleurs sur la page. */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: "28px",
-                      borderRadius: "50%",
-                      background: "var(--fond-camembert)",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      textAlign: "center",
-                    }}
-                  >
-                    <s-text color="subdued">Total</s-text>
-                    <s-text type="strong">{formateurEUR.format(totalVentes)}</s-text>
-                  </div>
-                </div>
-              </div>
-
-              <s-stack direction="block" gap="small-300">
-                {tranches.map((tranche) => (
-                  <s-stack key={tranche.label} direction="inline" justifyContent="space-between" alignItems="center">
-                    <s-stack direction="inline" gap="small-200" alignItems="center">
-                      <div style={{ width: "12px", height: "12px", borderRadius: "3px", background: tranche.couleur, flexShrink: 0 }} />
-                      <s-text>{tranche.label}</s-text>
-                    </s-stack>
-                    <s-stack direction="inline" gap="small-200" alignItems="center">
-                      <s-text color="subdued">{tranche.pourcentage.toFixed(1)} %</s-text>
-                      <s-text type="strong">{formateurEUR.format(tranche.montant)}</s-text>
-                    </s-stack>
-                  </s-stack>
-                ))}
-              </s-stack>
-            </s-stack>
+            <Camembert tranches={tranches} total={totalVentes} libelleTotal="Total" />
           )}
         </s-stack>
       </s-section>
@@ -258,28 +277,27 @@ export default function Statistiques() {
         </s-section>
       )}
 
-      {tauxRemboursement.length > 0 && (
+      {produitsRembourses.length > 0 && (
         <s-section heading="Produits souvent remboursés">
           <s-stack direction="block" gap="base">
             <s-text color="subdued">
               Peut signaler un souci (taille, qualité, description) — ne compte pas
               dans le CA des meilleures ventes, qui exclut déjà ce qui est remboursé.
+              Le pourcentage est la part de CE produit dans le total remboursé de la
+              période, pas son propre taux de remboursement.
             </s-text>
-            {/* Trié par taux décroissant (voir obtenirTauxRemboursement) : le pire
-                en premier, pour repérer tout de suite le produit à surveiller. */}
+
+            <Camembert tranches={tranchesRembourses} total={totalRembourse} libelleTotal="Total remboursé" />
+
             <s-table variant="list" paginate={false}>
               <s-table-header-row>
                 <s-table-header listSlot="primary">Produit</s-table-header>
-                <s-table-header>Taux remboursé</s-table-header>
                 <s-table-header format="currency">Montant remboursé</s-table-header>
               </s-table-header-row>
               <s-table-body>
-                {tauxRemboursement.map((produit) => (
+                {produitsRembourses.map((produit) => (
                   <s-table-row key={`${produit.titreProduit}-${produit.titreVariante ?? ""}`}>
                     <s-table-cell>{libelleVente(produit)}</s-table-cell>
-                    <s-table-cell>
-                      <s-badge tone="warning">{produit.tauxRemboursement.toFixed(0)} %</s-badge>
-                    </s-table-cell>
                     <s-table-cell>{formateurEUR.format(produit.montantRembourse)}</s-table-cell>
                   </s-table-row>
                 ))}

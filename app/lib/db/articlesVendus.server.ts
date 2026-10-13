@@ -104,31 +104,28 @@ export async function obtenirTotalVentes(shopDomain: string, debut: Date, fin: D
   return Number(resultat._sum.montant ?? 0);
 }
 
-export interface TauxRemboursement {
+export interface ProduitRembourse {
   titreProduit: string;
   titreVariante: string | null;
-  montantBrut: number;
   montantRembourse: number;
-  /** Pourcentage du CA brut reparti en remboursement (0-100). */
-  tauxRemboursement: number;
 }
 
 /**
- * Produits avec le plus d'argent remboursé sur une période (classés par montant, pas
- * par taux en %) — vue séparée des "Meilleures ventes" (CA net), volontairement : un
- * produit souvent remboursé peut signaler un souci (qualité, taille, description
- * trompeuse), une info que la seule liste des meilleures ventes masquerait
- * complètement puisqu'il en est exclu. Trié par montant (pas par taux) : un produit
- * remboursé à 100% pour 10€ pèse moins dans la réalité qu'un produit remboursé à 5%
- * pour 500€ — c'est l'impact en argent qui compte ici. Ne garde que les produits avec
- * au moins un remboursement : pas utile d'afficher une longue liste à 0€.
+ * Produits avec le plus d'argent remboursé sur une période, classés par montant —
+ * vue séparée des "Meilleures ventes" (CA net), volontairement : un produit souvent
+ * remboursé peut signaler un souci (qualité, taille, description trompeuse), une info
+ * que la seule liste des meilleures ventes masquerait complètement puisqu'il en est
+ * exclu. Pas de taux par produit ici (un produit remboursé à 100% pour 10€ pèserait
+ * plus haut qu'un produit remboursé à 5% pour 500€, alors que c'est l'inverse en
+ * impact réel) — le pourcentage affiché (camembert, voir app.statistiques.tsx) est
+ * la part de CE produit dans le TOTAL remboursé de la période, pas son propre taux.
  */
-export async function obtenirTauxRemboursement(
+export async function obtenirProduitsRembourses(
   shopDomain: string,
   debut: Date,
   fin: Date,
   limite: number,
-): Promise<TauxRemboursement[]> {
+): Promise<ProduitRembourse[]> {
   const resultat = await executerAvecContexteBoutique(shopDomain, (tx) =>
     tx.articleVendu.groupBy({
       by: ["titreProduit", "titreVariante"],
@@ -141,16 +138,31 @@ export async function obtenirTauxRemboursement(
     .map((ligne) => {
       const montantBrut = Number(ligne._sum.montantBrut ?? 0);
       const montantNet = Number(ligne._sum.montant ?? 0);
-      const montantRembourse = Math.max(0, montantBrut - montantNet);
       return {
         titreProduit: ligne.titreProduit,
         titreVariante: ligne.titreVariante,
-        montantBrut,
-        montantRembourse,
-        tauxRemboursement: montantBrut > 0 ? (montantRembourse / montantBrut) * 100 : 0,
+        montantRembourse: Math.max(0, montantBrut - montantNet),
       };
     })
     .filter((ligne) => ligne.montantRembourse > 0.005)
     .sort((a, b) => b.montantRembourse - a.montantRembourse)
     .slice(0, limite);
+}
+
+/**
+ * Montant total remboursé sur la période, tous produits confondus — dénominateur du
+ * camembert des remboursements (y compris la part "Autres" au-delà du top affiché),
+ * même principe que obtenirTotalVentes.
+ */
+export async function obtenirTotalRembourse(shopDomain: string, debut: Date, fin: Date): Promise<number> {
+  const resultat = await executerAvecContexteBoutique(shopDomain, (tx) =>
+    tx.articleVendu.aggregate({
+      where: { shopDomain, dateVente: { gte: debut, lte: fin } },
+      _sum: { montant: true, montantBrut: true },
+    }),
+  );
+
+  const montantBrut = Number(resultat._sum.montantBrut ?? 0);
+  const montantNet = Number(resultat._sum.montant ?? 0);
+  return Math.max(0, montantBrut - montantNet);
 }
