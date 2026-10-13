@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { decalagePeriodeDepuisParam, periodeCourante, periodeDecalee, periodeVientDeSeTerminer } from "../periode";
+import {
+  decalageAnneeDepuisParam,
+  decalagePeriodeDepuisParam,
+  periodeAnneeDecalee,
+  periodeCourante,
+  periodeDecalee,
+  periodeVientDeSeTerminer,
+} from "../periode";
 import { composantesParis } from "../fuseauParis";
 
 describe("periodeCourante", () => {
@@ -108,5 +115,37 @@ describe("decalagePeriodeDepuisParam", () => {
 
   it("tronque une valeur décimale", () => {
     expect(decalagePeriodeDepuisParam("-2.7")).toBe(-2);
+  });
+});
+
+describe("periodeAnneeDecalee", () => {
+  it("couvre toute l'année civile en heure de Paris", () => {
+    const periode = periodeAnneeDecalee(0, new Date(Date.UTC(2026, 5, 15)));
+    expect(composantesParis(periode.debut)).toEqual({ annee: 2026, mois: 0, jour: 1 });
+    expect(composantesParis(periode.fin)).toEqual({ annee: 2026, mois: 11, jour: 31 });
+    expect(periode.label).toBe("Année 2026");
+  });
+
+  it("décale d'une année en arrière", () => {
+    const periode = periodeAnneeDecalee(-1, new Date(Date.UTC(2026, 5, 15)));
+    expect(periode.label).toBe("Année 2025");
+  });
+});
+
+describe("decalageAnneeDepuisParam", () => {
+  it("vaut 0 par défaut (l'année en cours)", () => {
+    expect(decalageAnneeDepuisParam(null)).toBe(0);
+  });
+
+  it("accepte un décalage négatif valide", () => {
+    expect(decalageAnneeDepuisParam("-2")).toBe(-2);
+  });
+
+  it("plafonne à 0, jamais une année future", () => {
+    expect(decalageAnneeDepuisParam("3")).toBe(0);
+  });
+
+  it("retombe sur 0 pour une valeur non numérique", () => {
+    expect(decalageAnneeDepuisParam("abc")).toBe(0);
   });
 });

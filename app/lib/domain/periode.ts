@@ -84,6 +84,40 @@ export function decalagePeriodeDepuisParam(valeur: string | null): number {
   return Number.isFinite(brut) ? Math.min(0, Math.trunc(brut)) : -1;
 }
 
+export interface PeriodeAnnee {
+  debut: Date;
+  fin: Date;
+  label: string;
+}
+
+/**
+ * Année civile décalée de `decalage` années par rapport à l'année en cours (0 = en
+ * cours, -1 = précédente...) — pour la vue "par année" des statistiques
+ * (app.statistiques.tsx), indépendante de la périodicité de déclaration MENSUELLE/
+ * TRIMESTRIELLE du marchand : une vue annuelle a du sens même pour qui déclare au
+ * mois ou au trimestre.
+ */
+export function periodeAnneeDecalee(decalage: number, maintenant = new Date()): PeriodeAnnee {
+  const { annee } = composantesParis(maintenant);
+  const anneeCible = annee + decalage;
+  return {
+    debut: debutDeJourParis(anneeCible, 0, 1),
+    fin: finDeJourParis(anneeCible, 11, 31),
+    label: `Année ${anneeCible}`,
+  };
+}
+
+/**
+ * Interprète le paramètre d'URL `annee` (décalage choisi) — jamais au-delà de
+ * l'année en cours, 0 par défaut (l'année en cours : contrairement à une période de
+ * déclaration déjà close, l'année civile en cours reste la vue la plus utile par
+ * défaut pour une vue informative comme les statistiques).
+ */
+export function decalageAnneeDepuisParam(valeur: string | null): number {
+  const brut = Number(valeur ?? "0");
+  return Number.isFinite(brut) ? Math.min(0, Math.trunc(brut)) : 0;
+}
+
 export interface VerificationEcheance {
   estDue: boolean;
   periode: PeriodeCourante;

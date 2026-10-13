@@ -80,3 +80,19 @@ export async function obtenirMeilleuresVentes(
     montant: Number(ligne._sum.montant ?? 0),
   }));
 }
+
+/**
+ * CA total généré sur la période, tous produits confondus — sert de dénominateur
+ * pour calculer les pourcentages (camembert des meilleures ventes), y compris la
+ * part "Autres" au-delà du top affiché.
+ */
+export async function obtenirTotalVentes(shopDomain: string, debut: Date, fin: Date): Promise<number> {
+  const resultat = await executerAvecContexteBoutique(shopDomain, (tx) =>
+    tx.articleVendu.aggregate({
+      where: { shopDomain, dateVente: { gte: debut, lte: fin } },
+      _sum: { montant: true },
+    }),
+  );
+
+  return Number(resultat._sum.montant ?? 0);
+}
