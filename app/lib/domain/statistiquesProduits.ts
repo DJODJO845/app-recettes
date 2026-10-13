@@ -1,10 +1,11 @@
+import { construireLignesLivre } from "./livreDesRecettes";
 import type { ArticleVenduDomaine, CommandeShopify } from "./types";
 
 export interface ResultatArticlesCommande {
   /**
    * GID de toutes les lignes de produit de la commande, même si `articles` est vide —
    * sert à effacer d'anciennes lignes déjà enregistrées lors d'un import précédent, si
-   * la commande est depuis entièrement remboursée (voir importerCommandes.server.ts).
+   * la commande est depuis (ré)remboursée (voir importerCommandes.server.ts).
    */
   idsLigneCommande: string[];
   articles: ArticleVenduDomaine[];
@@ -28,40 +29,43 @@ function dateDePremiereVenteReussie(commande: CommandeShopify): string | null {
 }
 
 /**
- * Montant net réellement encaissé pour la commande (ventes réussies moins
- * remboursements réussis) — même principe que `compteDansCA` du livre des recettes.
- * Sert à exclure des statistiques les commandes intégralement remboursées : sans ça,
- * un article resterait affiché comme "vendu" après un remboursement complet, alors
- * que le livre des recettes (seule source officielle du CA déclaré) retombe à 0€ net
- * pour cette commande.
- *
- * Limite assumée : un remboursement PARTIEL (ex. un seul article sur trois) n'est pas
- * réparti ligne par ligne — Shopify ne nous donne pas cette répartition dans les
- * données déjà récupérées (lineItems, pas refundLineItems) — l'exclusion ne
- * s'applique donc que si le remboursement ramène le total de la commande à 0€ ou
- * moins.
+ * CA net réellement encaissé pour la commande, calculé via `construireLignesLivre`
+ * (même fonction que le livre des recettes, pas une réimplémentation parallèle) : ne
+ * garde que les lignes qui comptent dans le CA (`compteDansCA`), donc exclut déjà les
+ * règlements par carte cadeau (l'argent est entré ailleurs) et soustrait tout
+ * remboursement, partiel ou total. Une seule source de vérité pour "combien cette
+ * commande a-t-elle vraiment rapporté" — évite que les Statistiques se désynchronisent
+ * du livre si ses règles évoluent un jour.
  */
-function netVenteReussie(commande: CommandeShopify): number {
-  return commande.transactions
-    .filter((transaction) => transaction.status === "success" && (transaction.kind === "sale" || transaction.kind === "capture" || transaction.kind === "refund"))
-    .reduce((total, transaction) => total + (transaction.kind === "refund" ? -transaction.amount : transaction.amount), 0);
+function netEncaisseLivre(commande: CommandeShopify): number {
+  return construireLignesLivre(commande)
+    .filter((ligne) => ligne.compteDansCA)
+    .reduce((total, ligne) => total + ligne.montant, 0);
 }
 
 /**
- * Construit les lignes de statistiques produit d'une commande (meilleures ventes),
- * à la date de son premier encaissement réel. Ces statistiques sont informatives —
- * elles aident le marchand à voir ce qui se vend — et ne sont jamais la source du CA
- * déclaré à l'URSSAF, qui reste calculé uniquement à partir du livre des recettes
- * (voir livreDesRecettes.ts) : une remise après-coup ou des frais de port n'ont par
- * exemple aucun effet ici, contrairement au livre.
+ * Construit les lignes de statistiques produit d'une commande (meilleures ventes), à
+ * la date de son premier encaissement réel. Le montant attribué à chaque article
+ * n'est PAS son prix affiché : c'est sa part proportionnelle du CA net réellement
+ * encaissé pour la commande entière (frais de port et remises globales inclus,
+ * remboursements déduits) — pour que le total des Statistiques corresponde toujours
+ * exactement au livre des recettes, seule source officielle du CA déclaré à
+ * l'URSSAF. La répartition par produit reste une approximation (on ne sait pas
+ * quel article précis portait la remise ou le remboursement), mais le total, lui,
+ * est exact.
  */
 export function construireArticlesVendus(commande: CommandeShopify): ResultatArticlesCommande {
   const idsLigneCommande = commande.articles.map((article) => article.id);
   const date = dateDePremiereVenteReussie(commande);
+  if (!date) return { idsLigneCommande, articles: [] };
 
-  if (!date || netVenteReussie(commande) <= 0) {
-    return { idsLigneCommande, articles: [] };
-  }
+  const net = netEncaisseLivre(commande);
+  if (net <= 0) return { idsLigneCommande, articles: [] };
+
+  const montantArticlesBrut = commande.articles.reduce((somme, article) => somme + article.montant, 0);
+  if (montantArticlesBrut <= 0) return { idsLigneCommande, articles: [] };
+
+  const facteurRepartition = net / montantArticlesBrut;
 
   return {
     idsLigneCommande,
@@ -71,7 +75,7 @@ export function construireArticlesVendus(commande: CommandeShopify): ResultatArt
       titreProduit: article.titre,
       titreVariante: article.titreVariante,
       quantite: article.quantite,
-      montant: article.montant,
+      montant: article.montant * facteurRepartition,
     })),
   };
 }

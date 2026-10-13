@@ -140,9 +140,10 @@ export default function Statistiques() {
 
       <s-banner tone="info">
         <s-paragraph>
-          Informatif uniquement : ces chiffres ne remplacent pas le livre des recettes,
-          seule source du CA déclaré à l&apos;URSSAF (un article peut par exemple être
-          remboursé après coup sans que ce classement ne change).
+          Informatif uniquement : le total correspond au livre des recettes (frais de
+          port, remises et remboursements inclus), mais la répartition par produit
+          reste une estimation — répartie au prorata, car Shopify ne précise pas
+          toujours quel article précis porte une remise ou un remboursement.
         </s-paragraph>
       </s-banner>
 
