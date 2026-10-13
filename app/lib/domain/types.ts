@@ -41,6 +41,28 @@ export interface CommandeShopify {
   /** true si la commande porte sur une carte cadeau vendue (pas une commande réglée avec une carte cadeau). */
   estVenteDeCarteCadeau: boolean;
   transactions: TransactionShopify[];
+  /** Articles de la commande, cartes cadeaux déjà exclues (voir mapperCommande) — pour les statistiques de ventes, pas le livre des recettes. */
+  articles: ArticleLigneCommande[];
+}
+
+export interface ArticleLigneCommande {
+  /** GID Shopify du lineItem, pour l'idempotence de l'import (voir ArticleVendu). */
+  id: string;
+  titre: string;
+  titreVariante?: string;
+  quantite: number;
+  /** CA généré par cette ligne (quantité × prix unitaire, remise déduite), devise de la boutique. */
+  montant: number;
+}
+
+export interface ArticleVenduDomaine {
+  id: string;
+  /** Date de la vente : celle de la première transaction de vente réussie de la commande (voir statistiquesProduits.ts). */
+  date: string;
+  titreProduit: string;
+  titreVariante?: string;
+  quantite: number;
+  montant: number;
 }
 
 export type NatureLigneLivre =

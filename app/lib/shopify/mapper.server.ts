@@ -22,6 +22,18 @@ export function mapperCommande(node: OrderNode): CommandeShopify {
     // nomClient/clientId restent undefined : le champ `customer` n'est pas demandé
     // tant que l'accès aux protected customer data n'est pas approuvé (voir graphql.ts).
     estVenteDeCarteCadeau: node.lineItems.nodes.some((li) => li.isGiftCard),
+    // Cartes cadeaux exclues : ce ne sont pas des "produits vendus" au sens des
+    // statistiques (voir statistiquesProduits.ts), déjà traitées séparément
+    // (estVenteDeCarteCadeau) côté livre des recettes.
+    articles: node.lineItems.nodes
+      .filter((li) => !li.isGiftCard)
+      .map((li) => ({
+        id: li.id,
+        titre: li.title,
+        titreVariante: li.variantTitle ?? undefined,
+        quantite: li.quantity,
+        montant: Number.parseFloat(li.discountedTotalSet.shopMoney.amount),
+      })),
     transactions: node.transactions
       .map((t) => {
         const kind = mapperNature(t.kind);

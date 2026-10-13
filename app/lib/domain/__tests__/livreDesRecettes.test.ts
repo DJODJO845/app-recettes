@@ -8,6 +8,7 @@ function commande(partiel: Partial<CommandeShopify> & Pick<CommandeShopify, "id"
     sourceName: "web",
     nomClient: "Camille Dupont",
     estVenteDeCarteCadeau: false,
+    articles: [],
     ...partiel,
   };
 }

@@ -197,6 +197,7 @@ export default function App() {
         <s-link href="/app">Tableau de bord</s-link>
         <s-link href="/app/livre">Livre des recettes</s-link>
         <s-link href="/app/export">Export</s-link>
+        <s-link href="/app/statistiques">Statistiques</s-link>
         <s-link href="/app/reglages">Réglages</s-link>
       </s-app-nav>
       <Outlet />

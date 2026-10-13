@@ -11,6 +11,7 @@
 
 alter table "Boutique" enable row level security;
 alter table "LigneLivre" enable row level security;
+alter table "ArticleVendu" enable row level security;
 
 create policy boutique_isolee_par_shop
   on "Boutique"
@@ -18,6 +19,10 @@ create policy boutique_isolee_par_shop
 
 create policy ligne_livre_isolee_par_shop
   on "LigneLivre"
+  using ("shopDomain" = current_setting('app.current_shop', true));
+
+create policy article_vendu_isole_par_shop
+  on "ArticleVendu"
   using ("shopDomain" = current_setting('app.current_shop', true));
 
 -- Côté application, avant toute requête Prisma sur ces tables, dans la même transaction :

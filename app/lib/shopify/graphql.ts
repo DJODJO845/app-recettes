@@ -42,7 +42,16 @@ export const REQUETE_COMMANDES_RECENTES = `#graphql
         # qu'une requête d'import systématiquement rejetée.
         lineItems(first: 10) {
           nodes {
+            id
             isGiftCard
+            title
+            variantTitle
+            quantity
+            discountedTotalSet {
+              shopMoney {
+                amount
+              }
+            }
           }
         }
         transactions {
@@ -71,11 +80,20 @@ export interface OrderTransactionNode {
   amountSet: { shopMoney: { amount: string } };
 }
 
+export interface OrderLineItemNode {
+  id: string;
+  isGiftCard: boolean;
+  title: string;
+  variantTitle: string | null;
+  quantity: number;
+  discountedTotalSet: { shopMoney: { amount: string } };
+}
+
 export interface OrderNode {
   id: string;
   name: string;
   sourceName: string | null;
-  lineItems: { nodes: { isGiftCard: boolean }[] };
+  lineItems: { nodes: OrderLineItemNode[] };
   transactions: OrderTransactionNode[];
 }
 

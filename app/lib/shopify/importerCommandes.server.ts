@@ -1,5 +1,7 @@
 import { commandeEstDansPerimetre, construireLignesLivre } from "../domain/livreDesRecettes";
+import { construireArticlesVendus } from "../domain/statistiquesProduits";
 import { enregistrerLignes } from "../db/lignesLivre.server";
+import { enregistrerArticlesVendus } from "../db/articlesVendus.server";
 import { mapperCommande } from "./mapper.server";
 import { REQUETE_COMMANDES_RECENTES, type CommandesRecentesResponse } from "./graphql";
 
@@ -53,12 +55,21 @@ export async function importerCommandesRecentes(
     // la commande hors périmètre, remboursement compris — voir commandeEstDansPerimetre),
     // puis par ligne en filet de sécurité final pour le cas résiduel d'une commande
     // sans aucune transaction de vente.
-    const lignes = json.data.orders.nodes
+    const commandesDansPerimetre = json.data.orders.nodes
       .map(mapperCommande)
-      .filter((commande) => commandeEstDansPerimetre(commande, plancherPeriode))
+      .filter((commande) => commandeEstDansPerimetre(commande, plancherPeriode));
+
+    const lignes = commandesDansPerimetre
       .flatMap(construireLignesLivre)
       .filter((ligne) => new Date(ligne.date) >= plancherPeriode);
     totalLignesEnregistrees += await enregistrerLignes(shopDomain, lignes);
+
+    // Statistiques de ventes par produit (app.statistiques.tsx) — informatif, en plus
+    // du livre des recettes, pas à sa place (voir statistiquesProduits.ts).
+    const articles = commandesDansPerimetre
+      .flatMap(construireArticlesVendus)
+      .filter((article) => new Date(article.date) >= plancherPeriode);
+    await enregistrerArticlesVendus(shopDomain, articles);
 
     hasNextPage = json.data.orders.pageInfo.hasNextPage;
     cursor = json.data.orders.pageInfo.endCursor;

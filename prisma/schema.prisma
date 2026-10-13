@@ -74,6 +74,7 @@ model Boutique {
   updatedAt          DateTime     @updatedAt
 
   lignesLivre LigneLivre[]
+  articlesVendus ArticleVendu[]
 }
 
 // Une ligne = un encaissement ou un remboursement réel. JAMAIS de mise à jour d'une
@@ -111,6 +112,30 @@ model LigneLivre {
 
   @@index([shopDomain, dateEncaissement])
   @@index([shopDomain, clientId])
+}
+
+// Statistiques de ventes par produit ("meilleures ventes", app.statistiques.tsx) —
+// informatif pour le marchand, jamais la source du CA déclaré à l'URSSAF (toujours
+// LigneLivre, voir statistiquesProduits.ts). Alimenté en parallèle de LigneLivre lors
+// de l'import (importerCommandes.server.ts), une ligne par article de commande.
+model ArticleVendu {
+  id              String   @id @default(uuid())
+  shopDomain      String
+  boutique        Boutique @relation(fields: [shopDomain], references: [shopDomain])
+
+  // GID Shopify du lineItem d'origine, pour idempotence des imports.
+  ligneCommandeId String   @unique
+
+  dateVente       DateTime
+  titreProduit    String
+  titreVariante   String?
+  quantite        Int
+  montant         Decimal  @db.Decimal(12, 2)
+
+  createdAt       DateTime @default(now())
+
+  @@index([shopDomain, dateVente])
+  @@index([shopDomain, titreProduit])
 }
 
 // Stockage des sessions Shopify (remplace le stockage SQLite par défaut du template
