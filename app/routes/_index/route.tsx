@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from "react-router";
 import { redirect, Form, Link, useLoaderData } from "react-router";
 
 import { login } from "../../shopify.server";
@@ -6,6 +6,16 @@ import { login } from "../../shopify.server";
 import styles from "./styles.module.css";
 
 const URL_APP_STORE = "https://apps.shopify.com/recettes-urssaf?locale=fr";
+
+// Police serif pour les titres uniquement (le corps du texte reste en Inter/sans) —
+// le contraste serif/sans sur une seule page est un signal "premium" reconnaissable
+// (presse, luxe), spécifique à cette landing page publique : pas chargée dans l'app
+// embarquée (Polaris impose déjà sa propre police).
+export const links: LinksFunction = () => [
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+  { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" },
+];
 
 export const meta: MetaFunction = () => [
   { title: "Recettes URSSAF — Le CA encaissé de votre micro-entreprise, calculé seul" },
@@ -132,7 +142,10 @@ export default function App() {
             <a className={styles.bouton} href={URL_APP_STORE} target="_blank" rel="noreferrer">
               Installer sur Shopify
             </a>
-            <p className={styles.prix}>9,99 €/mois · 7 jours d&apos;essai gratuit</p>
+            <p className={styles.prix}>
+              <span className={styles.prixMontant}>9,99 €/mois</span>
+              <span className={styles.prixEssai}>7 jours d&apos;essai gratuit</span>
+            </p>
           </div>
         </div>
       </header>

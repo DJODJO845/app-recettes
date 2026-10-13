@@ -21,6 +21,20 @@
   overflow: hidden;
 }
 
+/* Grain très léger (filtre SVG en data-URI, aucun fichier à charger) : casse le
+   dégradé parfaitement lisse d'un aplat numérique, un des signaux "fabriqué avec
+   soin" les plus utilisés sur les sites premium — imperceptible consciemment, mais
+   son absence se remarque en comparaison directe. */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
 /* Trois taches diffuses, purement décoratives : donnent de la profondeur au dégradé
    plat sans devenir une vraie illustration à maintenir. La touche dorée (en bas à
    gauche, loin du texte) apporte la note "premium" demandée sans repeindre toute la
@@ -66,9 +80,10 @@
 
 .heading {
   margin: 0 0 1.1rem;
-  font-size: 2.6rem;
-  font-weight: 750;
-  line-height: 1.15;
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  font-size: 2.85rem;
+  font-weight: 600;
+  line-height: 1.12;
   letter-spacing: -0.01em;
   color: #ffffff;
 }
@@ -107,10 +122,29 @@
 }
 
 .prix {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
   margin: 0;
+  padding: 0.4rem 0.4rem 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(230, 196, 100, 0.4);
+}
+
+.prixMontant {
   font-size: 0.95rem;
-  font-weight: 650;
-  color: #e6c464;
+  font-weight: 700;
+  color: #f0d78c;
+}
+
+.prixEssai {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(230, 196, 100, 0.16);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #d4f3e8;
 }
 
 /* ---------- Corps ---------- */
@@ -226,8 +260,9 @@
 .sectionTitre {
   position: relative;
   margin: 0 0 0.85rem;
-  font-size: 1.3rem;
-  font-weight: 650;
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #ffffff;
 }
 
