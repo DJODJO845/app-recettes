@@ -116,7 +116,12 @@ export default function App() {
       <header className={styles.hero}>
         <div aria-hidden="true" className={styles.heroFond} />
         <div className={styles.heroContenu}>
-          <p className={styles.eyebrow}>Pour les micro-entrepreneurs qui vendent sur Shopify</p>
+          <p className={styles.eyebrow}>
+            <span className={styles.eyebrowOr} aria-hidden="true">
+              ✦
+            </span>
+            Pour les micro-entrepreneurs qui vendent sur Shopify
+          </p>
           <h1 className={styles.heading}>Le chiffre d&apos;affaires encaissé de votre boutique, calculé seul</h1>
           <p className={styles.sousTitre}>
             Le livre des recettes de votre micro-entreprise se génère automatiquement, et

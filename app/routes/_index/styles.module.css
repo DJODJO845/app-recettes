@@ -21,14 +21,18 @@
   overflow: hidden;
 }
 
-/* Deux taches diffuses, purement décoratives : donnent de la profondeur au dégradé
-   plat sans devenir une vraie illustration à maintenir. aria-hidden côté JSX. */
+/* Trois taches diffuses, purement décoratives : donnent de la profondeur au dégradé
+   plat sans devenir une vraie illustration à maintenir. La touche dorée (en bas à
+   gauche, loin du texte) apporte la note "premium" demandée sans repeindre toute la
+   page — un dégradé vert+or est un classique du genre "luxe discret". aria-hidden
+   côté JSX. */
 .heroFond {
   position: absolute;
   inset: 0;
   background:
     radial-gradient(38rem 24rem at 15% -10%, rgba(255, 255, 255, 0.14), transparent 60%),
-    radial-gradient(30rem 22rem at 100% 10%, rgba(16, 185, 129, 0.35), transparent 65%);
+    radial-gradient(30rem 22rem at 100% 10%, rgba(16, 185, 129, 0.35), transparent 65%),
+    radial-gradient(26rem 20rem at -5% 115%, rgba(212, 175, 55, 0.32), transparent 70%);
   pointer-events: none;
 }
 
@@ -40,17 +44,24 @@
 }
 
 .eyebrow {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0 0 1.25rem;
-  padding: 0.35rem 0.85rem;
+  padding: 0.35rem 0.9rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(230, 196, 100, 0.45);
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: #d4f3e8;
+  color: #f0d78c;
   text-transform: uppercase;
+}
+
+.eyebrowOr {
+  color: #e6c464;
+  font-size: 0.75rem;
 }
 
 .heading {
@@ -97,8 +108,9 @@
 
 .prix {
   margin: 0;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: #e6c464;
 }
 
 /* ---------- Corps ---------- */
@@ -166,8 +178,8 @@
   height: 2.75rem;
   margin-bottom: 1rem;
   border-radius: 12px;
-  background: #e3f3ee;
-  color: #0e6b5c;
+  background: linear-gradient(145deg, #faf2d9, #f1e0ab);
+  color: #96721a;
 }
 
 .carteIcone svg {
@@ -207,7 +219,7 @@
   font-family: Georgia, "Times New Roman", serif;
   font-size: 9rem;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.06);
+  color: rgba(230, 196, 100, 0.14);
   pointer-events: none;
 }
 
