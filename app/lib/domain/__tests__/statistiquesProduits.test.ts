@@ -45,12 +45,33 @@ describe("construireArticlesVendus", () => {
     const resultat = construireArticlesVendus(cmd);
     const total = resultat.articles.reduce((somme, a) => somme + a.montant, 0);
 
-    // facteur = 130 / 100 = 1.3
+    // facteur = 130 / 100 = 1.3 ; montantBrut suit le même facteur, pas de remboursement ici.
     const produitA = resultat.articles.find((a) => a.titreProduit === "Produit A");
     expect(produitA?.montant).toBeCloseTo(104, 5);
-    expect(produitA?.montantBrut).toBe(80);
+    expect(produitA?.montantBrut).toBeCloseTo(104, 5);
     expect(resultat.articles.find((a) => a.titreProduit === "Produit B")?.montant).toBeCloseTo(26, 5);
     expect(total).toBeCloseTo(130, 5);
+  });
+
+  it("ne compte PAS une remise globale comme un remboursement (régression du 13 octobre 2026)", () => {
+    // Reproduit la commande #1003 en prod : prix produit 1329,90, remise -132,99,
+    // frais de port +30, encaissé 1226,91 — aucune transaction "refund". montant et
+    // montantBrut doivent être strictement identiques, sinon obtenirTauxRemboursement
+    // afficherait à tort un taux de remboursement pour un simple rabais.
+    const cmd = commande({
+      id: "gid://6",
+      name: "#1006",
+      transactions: [
+        { id: "txn-6", orderId: "gid://6", kind: "sale", status: "success", amount: 1226.91, gateway: "shopify_payments", processedAt: "2026-03-05T10:00:00Z" },
+      ],
+      articles: [{ id: "li-6", titre: "Produit A", quantite: 2, montant: 1329.9 }],
+    });
+
+    const resultat = construireArticlesVendus(cmd);
+
+    expect(resultat.articles).toHaveLength(1);
+    expect(resultat.articles[0]?.montant).toBeCloseTo(1226.91, 5);
+    expect(resultat.articles[0]?.montantBrut).toBeCloseTo(1226.91, 5);
   });
 
   it("ramène le montant net à 0 (mais garde montantBrut) quand la commande est intégralement remboursée", () => {
