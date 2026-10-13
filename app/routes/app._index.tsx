@@ -3,7 +3,7 @@ import { useLoaderData } from "react-router";
 import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 
 import { authenticateAdmin } from "../shopify.server";
-import { obtenirOuCreerBoutique, enregistrerImportation } from "../lib/db/boutique.server";
+import { obtenirOuCreerBoutique, enregistrerImportation, enregistrerDeviseVerifiee } from "../lib/db/boutique.server";
 import { calculerTotauxDashboard, calculerEvolutionMensuelle, calculerComparaisonAnnuelle } from "../lib/db/totaux.server";
 import { listerDernieresLignes } from "../lib/db/lignesLivre.server";
 import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.server";
@@ -23,6 +23,11 @@ const JOURS_AVANT_RAPPEL_EXPORT = 30;
 // d'indexation côté Shopify entre deux visites plutôt que de risquer de manquer
 // une commande créée juste avant le dernier import.
 const JOURS_MARGE_IMPORT_INCREMENTAL = 1;
+// La devise d'une boutique change très rarement : revérifier auprès de Shopify à
+// chaque chargement du Dashboard était un appel GraphQL quasi toujours inutile
+// (~1-1,5s observé en review le 6 octobre 2026). Un cache de 24h évite cet appel
+// sur l'immense majorité des visites, sans risque réel de rater un changement.
+const HEURES_CACHE_DEVISE = 24;
 
 // Valeurs posées en variables CSS (voir <style> dans le composant, même pattern que
 // --piste-jauge) plutôt qu'en hex figé ici : sans ça, ces couleurs fortes et teintes
@@ -55,6 +60,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticateAdmin(request);
   const boutique = await obtenirOuCreerBoutique(session.shop);
 
+  const cacheDeviseValide =
+    boutique.derniereVerificationDevise !== null &&
+    Date.now() - boutique.derniereVerificationDevise.getTime() < HEURES_CACHE_DEVISE * 60 * 60 * 1000;
+
   // Import des commandes et vérification de la devise sont deux appels Shopify
   // indépendants : les lancer en parallèle (plutôt que l'un après l'autre) évite de
   // payer deux fois la latence réseau à chaque chargement du tableau de bord (chaque
@@ -74,11 +83,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       await importerCommandesRecentes(admin, session.shop, depuis, boutique.dateDebutActivite);
       await enregistrerImportation(session.shop);
     })(),
-    (async () => {
-      const reponseDevise = await admin.graphql(REQUETE_DEVISE_BOUTIQUE);
-      const jsonDevise = (await reponseDevise.json()) as DeviseBoutiqueResponse;
-      return jsonDevise.data.shop.currencyCode;
-    })(),
+    cacheDeviseValide
+      ? Promise.resolve(boutique.deviseBoutique)
+      : (async () => {
+          const reponseDevise = await admin.graphql(REQUETE_DEVISE_BOUTIQUE);
+          const jsonDevise = (await reponseDevise.json()) as DeviseBoutiqueResponse;
+          const devise = jsonDevise.data.shop.currencyCode;
+          await enregistrerDeviseVerifiee(session.shop, devise);
+          return devise;
+        })(),
   ]);
 
   if (resultatImport.status === "rejected") {
@@ -105,7 +118,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // renvoie la devise de la boutique, pas forcément EUR) : sans cette vérification,
   // une boutique dans une autre devise verrait ses montants affichés avec un "€"
   // trompeur, sans le savoir.
-  let deviseBoutique = "EUR";
+  // En cas d'échec de la vérification, on retombe sur la dernière valeur connue en
+  // base (boutique.deviseBoutique) plutôt que de supposer "EUR" à l'aveugle — plus
+  // fiable pour une boutique déjà identifiée dans une autre devise.
+  let deviseBoutique = boutique.deviseBoutique;
   if (resultatDevise.status === "fulfilled") {
     deviseBoutique = resultatDevise.value;
   } else {

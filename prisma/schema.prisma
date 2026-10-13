@@ -64,6 +64,12 @@ model Boutique {
   // exécution quotidienne du cron, et on réarme à OK si le CA annuel repasse sous
   // le seuil (nouvelle année civile) pour que la prochaine hausse notifie à nouveau.
   derniereAlertePlafondNiveau NiveauAlerte @default(OK)
+  // Devise de la boutique telle que vérifiée auprès de Shopify, mise en cache pour
+  // éviter de refaire l'appel GraphQL à chaque chargement du Dashboard (la devise
+  // d'une boutique change très rarement). Revérifiée seulement si
+  // derniereVerificationDevise date de plus de 24h (cf. app._index.tsx).
+  deviseBoutique              String       @default("EUR")
+  derniereVerificationDevise  DateTime?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
