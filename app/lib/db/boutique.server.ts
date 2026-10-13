@@ -9,6 +9,8 @@ export interface ReglagesBoutique {
   emailRappel: string | null;
   derniereExportation: Date | null;
   derniereImportation: Date | null;
+  deviseBoutique: string;
+  derniereVerificationDevise: Date | null;
 }
 
 // `dateDebutActivite` borne l'import des commandes Shopify (voir
@@ -78,6 +80,16 @@ export async function enregistrerImportation(shopDomain: string): Promise<void> 
     tx.boutique.update({
       where: { shopDomain },
       data: { derniereImportation: new Date() },
+    }),
+  );
+}
+
+/** Appelé après une vérification de devise auprès de Shopify (voir app._index.tsx), pour mettre en cache le résultat et éviter de la revérifier à chaque chargement du Dashboard. */
+export async function enregistrerDeviseVerifiee(shopDomain: string, devise: string): Promise<void> {
+  await executerAvecContexteBoutique(shopDomain, (tx) =>
+    tx.boutique.update({
+      where: { shopDomain },
+      data: { deviseBoutique: devise, derniereVerificationDevise: new Date() },
     }),
   );
 }

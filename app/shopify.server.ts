@@ -72,6 +72,11 @@ export async function authenticateAdmin(request: Request) {
     return await authenticate.admin(request);
   } catch (erreur) {
     if (erreur instanceof Response) throw erreur;
+    // Journalisé ici (jamais fait jusqu'ici) : sans ça, la vraie cause de ce filet
+    // reste invisible même dans les logs Render — seul le message générique renvoyé
+    // au marchand y apparaît, ce qui a empêché de diagnostiquer un blocage réel
+    // (retour d'approbation de facturation) le 13 octobre 2026.
+    console.error("authenticateAdmin() : authenticate.admin() a levé une exception non-Response :", erreur);
     throw new Response("Paramètres de requête invalides", { status: 400 });
   }
 }

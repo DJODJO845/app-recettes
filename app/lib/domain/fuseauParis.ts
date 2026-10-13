@@ -109,6 +109,17 @@ export function nombreJoursDuMois(annee: number, moisIndex0: number): number {
 }
 
 /**
+ * Normalise une année/mois où le mois peut sortir de 0-11 (ex. mois = -2 ou 13, utile
+ * pour décaler une période de plusieurs mois sans calculer soi-même le report sur
+ * l'année). Date.UTC gère nativement ce report, donc on relit les vraies composantes
+ * après coup plutôt que de recalculer l'année/le mois à la main.
+ */
+export function normaliserAnneeMois(annee: number, moisIndex0: number): { annee: number; mois: number } {
+  const normalise = new Date(Date.UTC(annee, moisIndex0, 1));
+  return { annee: normalise.getUTCFullYear(), mois: normalise.getUTCMonth() };
+}
+
+/**
  * Représentation "YYYY-MM-DD" d'une date en heure de Paris, pour préremplir un
  * `<s-date-field>` (qui attend ce format) sans utiliser `.toISOString()` — celle-ci
  * donnerait la date UTC, pas la date française (elles diffèrent selon l'heure).

@@ -2,7 +2,7 @@ import type { TypeActivite as TypeActivitePrisma } from "@prisma/client";
 import { calculerCAPeriode } from "../domain/livreDesRecettes";
 import { niveauAlertePlafond, type NiveauAlertePlafond, type TypeActivite as TypeActiviteReglementation } from "../domain/reglementation";
 import { periodeCourante, type PeriodeCourante } from "../domain/periode";
-import { composantesParis, debutDeJourParis, finDeJourParis, nombreJoursDuMois } from "../domain/fuseauParis";
+import { composantesParis, debutDeJourParis, finDeJourParis, nombreJoursDuMois, normaliserAnneeMois } from "../domain/fuseauParis";
 import { listerLignes } from "./lignesLivre.server";
 
 export interface ComparaisonAnnuelle {
@@ -46,7 +46,7 @@ export async function calculerEvolutionMensuelle(
     // annee/moisRelatif peuvent sortir de la plage 0-11 (mois négatif ou > 11) : Date.UTC
     // les normalise nativement, donc on relit les vraies composantes après coup plutôt
     // que de recalculer l'année/le mois à la main.
-    const { annee: anneeDuMois, mois: moisDuMois } = composantesDuMoisRelatif(annee, mois - i);
+    const { annee: anneeDuMois, mois: moisDuMois } = normaliserAnneeMois(annee, mois - i);
     const moisDebut = debutDeJourParis(anneeDuMois, moisDuMois, 1);
     const moisFin = finDeJourParis(anneeDuMois, moisDuMois, nombreJoursDuMois(anneeDuMois, moisDuMois));
     points.push({
@@ -58,12 +58,6 @@ export async function calculerEvolutionMensuelle(
     });
   }
   return points;
-}
-
-/** Normalise une année/mois où le mois peut sortir de 0-11 (ex. mois = -2 ou 13). */
-function composantesDuMoisRelatif(annee: number, moisIndex0: number): { annee: number; mois: number } {
-  const normalise = new Date(Date.UTC(annee, moisIndex0, 1));
-  return { annee: normalise.getUTCFullYear(), mois: normalise.getUTCMonth() };
 }
 
 export async function calculerTotauxDashboard(
