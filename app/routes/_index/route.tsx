@@ -176,6 +176,9 @@ export default function App() {
             règles pour vous, à chaque commande, sans que vous ayez à les connaître par
             cœur.
           </p>
+          <Link to="/guide-ca-encaisse-urssaf-shopify" className={styles.lienGuide}>
+            Lire le guide complet du calcul CA encaissé →
+          </Link>
         </section>
       </main>
 
@@ -195,6 +198,8 @@ export default function App() {
           </details>
         )}
         <p className={styles.piedLiens}>
+          <Link to="/guide-ca-encaisse-urssaf-shopify">Guide : calculer son CA encaissé</Link>
+          {" · "}
           <Link to="/politique-confidentialite">Politique de confidentialité</Link>
         </p>
       </footer>

@@ -10,6 +10,7 @@ import { importerCommandesRecentes } from "../lib/shopify/importerCommandes.serv
 import { REQUETE_DEVISE_BOUTIQUE, type DeviseBoutiqueResponse } from "../lib/shopify/graphql";
 import { plafondAnnuel, seuilsAlerte, projectionDatePlafond, type NiveauAlertePlafond } from "../lib/domain/reglementation";
 import { BanniereExport } from "../lib/ui/BanniereExport";
+import { BanniereAvis } from "../lib/ui/BanniereAvis";
 import { TexteDepliable } from "../lib/ui/TexteDepliable";
 import { joursDepuis } from "../lib/ui/dateRelative";
 import { MentionLegale } from "../lib/ui/MentionLegale";
@@ -19,6 +20,11 @@ import { formateurEUR, formateurDate } from "../lib/ui/formateurs";
 const NOMBRE_DERNIERES_RECETTES = 5;
 const NOMBRE_MOIS_EVOLUTION = 6;
 const JOURS_AVANT_RAPPEL_EXPORT = 30;
+// Laisse le temps au marchand de juger l'app réellement utile avant de lui demander
+// un avis — demander dès l'installation donne des avis moins sincères (et moins bien
+// notés, l'app n'a pas encore eu l'occasion de prouver sa valeur sur une vraie
+// déclaration).
+const JOURS_AVANT_PROPOSITION_AVIS = 14;
 // Marge de recouvrement lors d'un import incrémental, pour couvrir tout décalage
 // d'indexation côté Shopify entre deux visites plutôt que de risquer de manquer
 // une commande créée juste avant le dernier import.
@@ -154,6 +160,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const doitRappelerExport =
     !boutique.derniereExportation || joursDepuis(boutique.derniereExportation) >= JOURS_AVANT_RAPPEL_EXPORT;
+  const doitProposerAvis = joursDepuis(boutique.createdAt) >= JOURS_AVANT_PROPOSITION_AVIS;
 
   const dateProjeteePlafond = projectionDatePlafond(
     totaux.caAnnuelEncaisse,
@@ -171,6 +178,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     evolutionMensuelle,
     comparaisonAnnuelle,
     doitRappelerExport,
+    doitProposerAvis,
     typeActivite: boutique.typeActivite,
     deviseBoutique,
     pourcentageAvertissement,
@@ -189,6 +197,7 @@ export default function Dashboard() {
     evolutionMensuelle,
     comparaisonAnnuelle,
     doitRappelerExport,
+    doitProposerAvis,
     typeActivite,
     deviseBoutique,
     pourcentageAvertissement,
@@ -423,6 +432,7 @@ export default function Dashboard() {
       </s-section>
 
       {doitRappelerExport && <BanniereExport />}
+      {doitProposerAvis && <BanniereAvis />}
 
       <MentionLegale />
     </s-page>

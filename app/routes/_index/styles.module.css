@@ -278,6 +278,15 @@
   color: #ffffff;
 }
 
+.lienGuide {
+  position: relative;
+  display: inline-block;
+  margin-top: 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f0d78c;
+}
+
 /* ---------- Pied ---------- */
 
 .pied {

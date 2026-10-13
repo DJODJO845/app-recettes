@@ -1,0 +1,171 @@
+/* Page publique (contenu SEO) : mêmes garde-fous que la landing page (_index) —
+   couleurs explicites, color-scheme: light forcé en meta, jamais d'héritage dépendant
+   du thème du navigateur/OS. */
+.page {
+  width: 100%;
+  min-height: 100%;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #ffffff;
+  color: #262522;
+}
+
+.entete {
+  padding: 3rem 1.25rem 2.5rem;
+  background: linear-gradient(165deg, #0b3d33 0%, #0e6b5c 100%);
+  text-align: center;
+}
+
+.fil {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+}
+
+.fil a {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+}
+
+.titre {
+  margin: 0 auto;
+  max-width: 40rem;
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  font-size: 2.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.chapeau {
+  margin: 1rem auto 0;
+  max-width: 38rem;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.corps {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2.75rem 1.25rem 3.5rem;
+}
+
+.corps h2 {
+  margin: 2.25rem 0 0.85rem;
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #0b3d33;
+}
+
+.corps h2:first-child {
+  margin-top: 0;
+}
+
+.corps p,
+.corps li {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: #3c3b37;
+}
+
+.corps ul,
+.corps ol {
+  padding-left: 1.3rem;
+  margin: 0.75rem 0;
+}
+
+.corps li + li {
+  margin-top: 0.4rem;
+}
+
+.corps strong {
+  color: #0b0b0b;
+}
+
+.encart {
+  margin-top: 0.75rem;
+  padding: 1.5rem 1.5rem;
+  border-radius: 14px;
+  background: #eef6f4;
+  border: 1px solid #d9ece6;
+}
+
+.encart p:first-child {
+  margin-top: 0;
+}
+
+.encart p:last-child {
+  margin-bottom: 0;
+}
+
+.ctaBloc {
+  margin-top: 2.5rem;
+  padding: 2rem 1.75rem;
+  border-radius: 16px;
+  background: linear-gradient(165deg, #0b3d33 0%, #0e6b5c 100%);
+  text-align: center;
+}
+
+.ctaTitre {
+  margin: 0 0 0.5rem;
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.ctaTexte {
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.bouton {
+  display: inline-block;
+  padding: 0.85rem 1.75rem;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0b3d33;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.faq {
+  margin-top: 2.25rem;
+  border-top: 1px solid #ece9e3;
+  padding-top: 0.25rem;
+}
+
+.faqItem {
+  padding: 1rem 0;
+  border-bottom: 1px solid #ece9e3;
+}
+
+.faqQuestion {
+  margin: 0 0 0.4rem;
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: #0b0b0b;
+}
+
+.faqReponse {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #52514e;
+}
+
+.pied {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 2.5rem;
+  border-top: 1px solid #ece9e3;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #8a8880;
+}
+
+.pied a {
+  color: #0e6b5c;
+}

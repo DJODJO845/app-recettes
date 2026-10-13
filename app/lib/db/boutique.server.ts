@@ -11,6 +11,8 @@ export interface ReglagesBoutique {
   derniereImportation: Date | null;
   deviseBoutique: string;
   derniereVerificationDevise: Date | null;
+  /** Date d'installation de l'app (création de la fiche Boutique) — sert par exemple à n'afficher la bannière d'avis App Store qu'après quelques semaines d'usage réel. */
+  createdAt: Date;
 }
 
 // `dateDebutActivite` borne l'import des commandes Shopify (voir

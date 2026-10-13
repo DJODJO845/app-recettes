@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /$
+Allow: /guide-ca-encaisse-urssaf-shopify$
+Allow: /politique-confidentialite$
+Disallow: /app
+Disallow: /auth
+Disallow: /webhooks
+Disallow: /api
+
+Sitemap: https://app-recettes-1.onrender.com/sitemap.xml
