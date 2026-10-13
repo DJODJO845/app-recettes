@@ -27,7 +27,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const boutique = await obtenirOuCreerBoutique(session.shop);
 
   const url = new URL(request.url);
-  const vue: Vue = url.searchParams.get("vue") === "annee" ? "annee" : "periode";
+  // "Par année" par défaut (plutôt que "periode") : un premier aperçu annuel est plus
+  // parlant pour une page informative que la période de déclaration en cours, souvent
+  // plus courte (mensuelle) et donc moins représentative d'ensemble.
+  const vue: Vue = url.searchParams.get("vue") === "periode" ? "periode" : "annee";
 
   let debut: Date;
   let fin: Date;
@@ -115,7 +118,10 @@ function degradeConique(tranches: Tranche[]): string {
 }
 
 function lienVue(vue: Vue, decalage: number): string {
-  return vue === "annee" ? `/app/statistiques?vue=annee&annee=${decalage}` : `/app/statistiques?periode=${decalage}`;
+  // "vue=periode" explicite nécessaire même si c'est la valeur non-"annee" : le défaut
+  // du loader est "annee" (voir plus haut), donc un lien sans ce paramètre y
+  // retomberait plutôt que de basculer sur la période.
+  return vue === "annee" ? `/app/statistiques?vue=annee&annee=${decalage}` : `/app/statistiques?vue=periode&periode=${decalage}`;
 }
 
 export default function Statistiques() {
@@ -144,15 +150,6 @@ export default function Statistiques() {
           }
         }
       `}</style>
-
-      <s-banner tone="info">
-        <s-paragraph>
-          Informatif uniquement : le total correspond au livre des recettes (frais de
-          port, remises et remboursements inclus), mais la répartition par produit
-          reste une estimation — répartie au prorata, car Shopify ne précise pas
-          toujours quel article précis porte une remise ou un remboursement.
-        </s-paragraph>
-      </s-banner>
 
       <s-section heading="Meilleures ventes">
         <s-stack direction="block" gap="base">
