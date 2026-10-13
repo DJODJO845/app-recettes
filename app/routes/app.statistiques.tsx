@@ -2,7 +2,12 @@ import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { authenticateAdmin } from "../shopify.server";
 import { obtenirOuCreerBoutique } from "../lib/db/boutique.server";
-import { obtenirMeilleuresVentes, obtenirTotalVentes, type MeilleureVente } from "../lib/db/articlesVendus.server";
+import {
+  obtenirMeilleuresVentes,
+  obtenirTauxRemboursement,
+  obtenirTotalVentes,
+  type MeilleureVente,
+} from "../lib/db/articlesVendus.server";
 import {
   decalageAnneeDepuisParam,
   decalagePeriodeDepuisParam,
@@ -14,6 +19,7 @@ import { headersNonMisEnCache } from "../lib/ui/noStoreHeaders";
 import { formateurEUR } from "../lib/ui/formateurs";
 
 const NOMBRE_MEILLEURES_VENTES = 10;
+const NOMBRE_PRODUITS_REMBOURSEMENT = 5;
 // Au-delà de 6 tranches nommées, un camembert devient illisible (voir dataviz) — le
 // reste est regroupé dans "Autres" plutôt que d'ajouter une 7e couleur générée (non
 // distinguable de façon fiable pour le daltonisme).
@@ -51,12 +57,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     periodeLabel = periode.label;
   }
 
-  const [meilleuresVentes, totalVentes] = await Promise.all([
+  const [meilleuresVentes, totalVentes, tauxRemboursement] = await Promise.all([
     obtenirMeilleuresVentes(session.shop, debut, fin, NOMBRE_MEILLEURES_VENTES),
     obtenirTotalVentes(session.shop, debut, fin),
+    obtenirTauxRemboursement(session.shop, debut, fin, NOMBRE_PRODUITS_REMBOURSEMENT),
   ]);
 
-  return { vue, decalage, periodeLabel, meilleuresVentes, totalVentes };
+  return { vue, decalage, periodeLabel, meilleuresVentes, totalVentes, tauxRemboursement };
 };
 
 interface Tranche {
@@ -69,7 +76,7 @@ interface Tranche {
 /** "The Complete Snowboard — Dawn" plutôt que juste "The Complete Snowboard" : la
  * variante (taille, couleur...) est l'info qu'un marchand regarde pour savoir quelle
  * déclinaison précise se vend. */
-function libelleVente(vente: MeilleureVente): string {
+function libelleVente(vente: { titreProduit: string; titreVariante: string | null }): string {
   return vente.titreVariante ? `${vente.titreProduit} — ${vente.titreVariante}` : vente.titreProduit;
 }
 
@@ -125,7 +132,7 @@ function lienVue(vue: Vue, decalage: number): string {
 }
 
 export default function Statistiques() {
-  const { vue, decalage, periodeLabel, meilleuresVentes, totalVentes } = useLoaderData<typeof loader>();
+  const { vue, decalage, periodeLabel, meilleuresVentes, totalVentes, tauxRemboursement } = useLoaderData<typeof loader>();
   const tranches = construireTranches(meilleuresVentes, totalVentes);
 
   return (
@@ -248,6 +255,33 @@ export default function Statistiques() {
               ))}
             </s-table-body>
           </s-table>
+        </s-section>
+      )}
+
+      {tauxRemboursement.length > 0 && (
+        <s-section heading="Produits souvent remboursés">
+          <s-stack direction="block" gap="base">
+            <s-text color="subdued">
+              Peut signaler un souci (taille, qualité, description) — ne compte pas
+              dans le CA des meilleures ventes, qui exclut déjà ce qui est remboursé.
+            </s-text>
+            <s-stack direction="block" gap="small-300">
+              {tauxRemboursement.map((produit) => (
+                <s-stack
+                  key={`${produit.titreProduit}-${produit.titreVariante ?? ""}`}
+                  direction="inline"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <s-text>{libelleVente(produit)}</s-text>
+                  <s-stack direction="inline" gap="small-200" alignItems="center">
+                    <s-badge tone="warning">{produit.tauxRemboursement.toFixed(0)} % remboursé</s-badge>
+                    <s-text color="subdued">{formateurEUR.format(produit.montantRembourse)}</s-text>
+                  </s-stack>
+                </s-stack>
+              ))}
+            </s-stack>
+          </s-stack>
         </s-section>
       )}
 

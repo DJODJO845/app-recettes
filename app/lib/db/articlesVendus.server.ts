@@ -39,6 +39,7 @@ export async function enregistrerArticlesVendus(
         titreVariante: article.titreVariante,
         quantite: article.quantite,
         montant: article.montant,
+        montantBrut: article.montantBrut,
       })),
       skipDuplicates: true,
     }),
@@ -58,7 +59,10 @@ export interface MeilleureVente {
  * Les produits les plus vendus sur une période, groupés par titre ET variante (ex.
  * taille, couleur) : un marchand veut voir quelle déclinaison précise se vend, pas
  * juste le produit générique (voir discussion du 13 octobre 2026). Classés par CA
- * généré décroissant.
+ * généré décroissant. `montant: { gt: 0 }` exclut les lignes intégralement
+ * remboursées (CA net nul) : un produit revenu n'est pas une vente pour ce
+ * classement, voir construireArticlesVendus — mais la ligne reste en base pour
+ * obtenirTauxRemboursement.
  */
 export async function obtenirMeilleuresVentes(
   shopDomain: string,
@@ -69,7 +73,7 @@ export async function obtenirMeilleuresVentes(
   const resultat = await executerAvecContexteBoutique(shopDomain, (tx) =>
     tx.articleVendu.groupBy({
       by: ["titreProduit", "titreVariante"],
-      where: { shopDomain, dateVente: { gte: debut, lte: fin } },
+      where: { shopDomain, dateVente: { gte: debut, lte: fin }, montant: { gt: 0 } },
       _sum: { quantite: true, montant: true },
       orderBy: { _sum: { montant: "desc" } },
       take: limite,
@@ -98,4 +102,53 @@ export async function obtenirTotalVentes(shopDomain: string, debut: Date, fin: D
   );
 
   return Number(resultat._sum.montant ?? 0);
+}
+
+export interface TauxRemboursement {
+  titreProduit: string;
+  titreVariante: string | null;
+  montantBrut: number;
+  montantRembourse: number;
+  /** Pourcentage du CA brut reparti en remboursement (0-100). */
+  tauxRemboursement: number;
+}
+
+/**
+ * Produits avec le taux de remboursement le plus élevé sur une période — vue séparée
+ * des "Meilleures ventes" (CA net), volontairement : un produit souvent remboursé
+ * peut signaler un souci (qualité, taille, description trompeuse), une info que la
+ * seule liste des meilleures ventes masquerait complètement puisqu'il en est exclu.
+ * Ne garde que les produits avec au moins un remboursement (taux > 0) : pas utile
+ * d'afficher une longue liste à 0%.
+ */
+export async function obtenirTauxRemboursement(
+  shopDomain: string,
+  debut: Date,
+  fin: Date,
+  limite: number,
+): Promise<TauxRemboursement[]> {
+  const resultat = await executerAvecContexteBoutique(shopDomain, (tx) =>
+    tx.articleVendu.groupBy({
+      by: ["titreProduit", "titreVariante"],
+      where: { shopDomain, dateVente: { gte: debut, lte: fin }, montantBrut: { gt: 0 } },
+      _sum: { montant: true, montantBrut: true },
+    }),
+  );
+
+  return resultat
+    .map((ligne) => {
+      const montantBrut = Number(ligne._sum.montantBrut ?? 0);
+      const montantNet = Number(ligne._sum.montant ?? 0);
+      const montantRembourse = Math.max(0, montantBrut - montantNet);
+      return {
+        titreProduit: ligne.titreProduit,
+        titreVariante: ligne.titreVariante,
+        montantBrut,
+        montantRembourse,
+        tauxRemboursement: montantBrut > 0 ? (montantRembourse / montantBrut) * 100 : 0,
+      };
+    })
+    .filter((ligne) => ligne.tauxRemboursement > 0)
+    .sort((a, b) => b.tauxRemboursement - a.tauxRemboursement)
+    .slice(0, limite);
 }

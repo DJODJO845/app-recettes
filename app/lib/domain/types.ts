@@ -62,7 +62,10 @@ export interface ArticleVenduDomaine {
   titreProduit: string;
   titreVariante?: string;
   quantite: number;
+  /** CA net (après remboursement éventuel) — utilisé pour "Meilleures ventes", jamais la source du CA déclaré à l'URSSAF. */
   montant: number;
+  /** CA avant tout remboursement — sert uniquement à calculer un taux de remboursement par produit (voir obtenirTauxRemboursement), jamais à un autre usage. */
+  montantBrut: number;
 }
 
 export type NatureLigneLivre =

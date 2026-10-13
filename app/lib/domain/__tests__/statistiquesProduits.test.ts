@@ -25,7 +25,7 @@ describe("construireArticlesVendus", () => {
     const resultat = construireArticlesVendus(cmd);
 
     expect(resultat.articles).toHaveLength(1);
-    expect(resultat.articles[0]).toMatchObject({ titreProduit: "Produit A", montant: 100, date: "2026-03-05T10:00:00Z" });
+    expect(resultat.articles[0]).toMatchObject({ titreProduit: "Produit A", montant: 100, montantBrut: 100, date: "2026-03-05T10:00:00Z" });
     expect(resultat.idsLigneCommande).toEqual(["li-1"]);
   });
 
@@ -46,12 +46,14 @@ describe("construireArticlesVendus", () => {
     const total = resultat.articles.reduce((somme, a) => somme + a.montant, 0);
 
     // facteur = 130 / 100 = 1.3
-    expect(resultat.articles.find((a) => a.titreProduit === "Produit A")?.montant).toBeCloseTo(104, 5);
+    const produitA = resultat.articles.find((a) => a.titreProduit === "Produit A");
+    expect(produitA?.montant).toBeCloseTo(104, 5);
+    expect(produitA?.montantBrut).toBe(80);
     expect(resultat.articles.find((a) => a.titreProduit === "Produit B")?.montant).toBeCloseTo(26, 5);
     expect(total).toBeCloseTo(130, 5);
   });
 
-  it("exclut la commande si elle est intégralement remboursée (net <= 0)", () => {
+  it("ramène le montant net à 0 (mais garde montantBrut) quand la commande est intégralement remboursée", () => {
     const cmd = commande({
       id: "gid://3",
       name: "#1003",
@@ -64,12 +66,12 @@ describe("construireArticlesVendus", () => {
 
     const resultat = construireArticlesVendus(cmd);
 
-    expect(resultat.articles).toEqual([]);
-    // Les ids restent présents pour permettre d'effacer une éventuelle ancienne ligne.
+    expect(resultat.articles).toHaveLength(1);
+    expect(resultat.articles[0]).toMatchObject({ montant: 0, montantBrut: 50 });
     expect(resultat.idsLigneCommande).toEqual(["li-3"]);
   });
 
-  it("réduit proportionnellement le montant attribué en cas de remboursement partiel", () => {
+  it("réduit proportionnellement le montant net attribué en cas de remboursement partiel, sans toucher montantBrut", () => {
     const cmd = commande({
       id: "gid://4",
       name: "#1004",
@@ -87,7 +89,9 @@ describe("construireArticlesVendus", () => {
     const total = resultat.articles.reduce((somme, a) => somme + a.montant, 0);
 
     // net = 60, facteur = 60/100 = 0.6
-    expect(resultat.articles.find((a) => a.titreProduit === "Produit A")?.montant).toBeCloseTo(36, 5);
+    const produitA = resultat.articles.find((a) => a.titreProduit === "Produit A");
+    expect(produitA?.montant).toBeCloseTo(36, 5);
+    expect(produitA?.montantBrut).toBe(60);
     expect(resultat.articles.find((a) => a.titreProduit === "Produit B")?.montant).toBeCloseTo(24, 5);
     expect(total).toBeCloseTo(60, 5);
   });

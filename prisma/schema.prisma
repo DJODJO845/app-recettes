@@ -130,7 +130,13 @@ model ArticleVendu {
   titreProduit    String
   titreVariante   String?
   quantite        Int
+  // CA net (après remboursement éventuel, 0 si intégralement remboursé) — seul utilisé
+  // pour "Meilleures ventes". montantBrut (avant tout remboursement) sert uniquement à
+  // calculer un taux de remboursement par produit, affiché à part (voir
+  // obtenirTauxRemboursement) pour ne jamais fausser le classement des meilleures
+  // ventes avec un produit revenu, qui n'a rapporté aucun CA réel.
   montant         Decimal  @db.Decimal(12, 2)
+  montantBrut     Decimal  @db.Decimal(12, 2) @default(0)
 
   createdAt       DateTime @default(now())
 

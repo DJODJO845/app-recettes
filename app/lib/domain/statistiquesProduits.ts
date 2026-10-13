@@ -44,27 +44,33 @@ function netEncaisseLivre(commande: CommandeShopify): number {
 }
 
 /**
- * Construit les lignes de statistiques produit d'une commande (meilleures ventes), à
- * la date de son premier encaissement réel. Le montant attribué à chaque article
- * n'est PAS son prix affiché : c'est sa part proportionnelle du CA net réellement
- * encaissé pour la commande entière (frais de port et remises globales inclus,
- * remboursements déduits) — pour que le total des Statistiques corresponde toujours
- * exactement au livre des recettes, seule source officielle du CA déclaré à
- * l'URSSAF. La répartition par produit reste une approximation (on ne sait pas
- * quel article précis portait la remise ou le remboursement), mais le total, lui,
- * est exact.
+ * Construit les lignes de statistiques produit d'une commande, à la date de son
+ * premier encaissement réel. Deux montants par article, pour deux usages distincts :
+ *  - `montant` : sa part proportionnelle du CA NET réellement encaissé pour la
+ *    commande entière (frais de port et remises globales inclus, remboursements
+ *    déduits — 0 si la commande est intégralement remboursée). Seul utilisé pour
+ *    "Meilleures ventes", pour que ce classement ne compte jamais un produit revenu
+ *    comme une vente, et que le total corresponde exactement au livre des recettes.
+ *  - `montantBrut` : sa part du prix AVANT tout remboursement. Sert uniquement à
+ *    calculer un taux de remboursement par produit (obtenirTauxRemboursement) — une
+ *    commande remboursée n'est donc plus exclue ici comme avant, juste comptée à 0€
+ *    net tout en gardant trace de ce qu'elle valait au départ.
+ * La répartition par produit reste une approximation (on ne sait pas quel article
+ * précis portait la remise ou le remboursement), mais les deux totaux, eux, sont
+ * exacts.
  */
 export function construireArticlesVendus(commande: CommandeShopify): ResultatArticlesCommande {
   const idsLigneCommande = commande.articles.map((article) => article.id);
   const date = dateDePremiereVenteReussie(commande);
   if (!date) return { idsLigneCommande, articles: [] };
 
-  const net = netEncaisseLivre(commande);
-  if (net <= 0) return { idsLigneCommande, articles: [] };
-
   const montantArticlesBrut = commande.articles.reduce((somme, article) => somme + article.montant, 0);
   if (montantArticlesBrut <= 0) return { idsLigneCommande, articles: [] };
 
+  // Jamais négatif : un remboursement ne devrait jamais dépasser la vente d'origine,
+  // mais si c'était le cas (donnée Shopify incohérente), 0€ net reste le plancher
+  // correct plutôt qu'un montant négatif absurde dans "Meilleures ventes".
+  const net = Math.max(0, netEncaisseLivre(commande));
   const facteurRepartition = net / montantArticlesBrut;
 
   return {
@@ -76,6 +82,7 @@ export function construireArticlesVendus(commande: CommandeShopify): ResultatArt
       titreVariante: article.titreVariante,
       quantite: article.quantite,
       montant: article.montant * facteurRepartition,
+      montantBrut: article.montant,
     })),
   };
 }
