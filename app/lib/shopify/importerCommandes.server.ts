@@ -1,7 +1,7 @@
 import { commandeEstDansPerimetre, construireLignesLivre } from "../domain/livreDesRecettes";
 import { construireArticlesVendus } from "../domain/statistiquesProduits";
 import { enregistrerLignes } from "../db/lignesLivre.server";
-import { enregistrerArticlesVendus } from "../db/articlesVendus.server";
+import { enregistrerArticlesVendus, supprimerArticlesVendus } from "../db/articlesVendus.server";
 import { mapperCommande } from "./mapper.server";
 import { REQUETE_COMMANDES_RECENTES, type CommandesRecentesResponse } from "./graphql";
 
@@ -65,10 +65,17 @@ export async function importerCommandesRecentes(
     totalLignesEnregistrees += await enregistrerLignes(shopDomain, lignes);
 
     // Statistiques de ventes par produit (app.statistiques.tsx) — informatif, en plus
-    // du livre des recettes, pas à sa place (voir statistiquesProduits.ts).
-    const articles = commandesDansPerimetre
-      .flatMap(construireArticlesVendus)
+    // du livre des recettes, pas à sa place (voir statistiquesProduits.ts). On efface
+    // d'abord les lignes déjà enregistrées pour ces commandes avant de réinsérer :
+    // sans ça, une commande réimportée après un remboursement (son updated_at change,
+    // elle revient dans ce lot) garderait son ancienne ligne de statistique périmée,
+    // enregistrerArticlesVendus ne faisant qu'ajouter (skipDuplicates).
+    const resultatsArticles = commandesDansPerimetre.map(construireArticlesVendus);
+    const idsLigneCommande = resultatsArticles.flatMap((resultat) => resultat.idsLigneCommande);
+    const articles = resultatsArticles
+      .flatMap((resultat) => resultat.articles)
       .filter((article) => new Date(article.date) >= plancherPeriode);
+    await supprimerArticlesVendus(shopDomain, idsLigneCommande);
     await enregistrerArticlesVendus(shopDomain, articles);
 
     hasNextPage = json.data.orders.pageInfo.hasNextPage;

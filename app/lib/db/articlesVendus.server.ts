@@ -2,6 +2,24 @@ import type { ArticleVenduDomaine } from "../domain/types";
 import { executerAvecContexteBoutique } from "./rls.server";
 
 /**
+ * Supprime les lignes déjà enregistrées pour ces lignes de commande, avant de les
+ * réinsérer (voir importerCommandes.server.ts) — rend l'import auto-réparateur : si
+ * une commande déjà importée est depuis remboursée, le prochain import efface
+ * l'ancienne ligne au lieu de la laisser périmée (contrairement au livre des
+ * recettes, où chaque ligne reste immuable par obligation légale — voir
+ * lignesLivre.server.ts).
+ */
+export async function supprimerArticlesVendus(shopDomain: string, idsLigneCommande: string[]): Promise<void> {
+  if (idsLigneCommande.length === 0) return;
+
+  await executerAvecContexteBoutique(shopDomain, (tx) =>
+    tx.articleVendu.deleteMany({
+      where: { shopDomain, ligneCommandeId: { in: idsLigneCommande } },
+    }),
+  );
+}
+
+/**
  * Enregistre les articles vendus construits par `construireArticlesVendus` (import
  * Shopify), en ignorant ceux déjà présents (idempotence via `ligneCommandeId` unique).
  */
