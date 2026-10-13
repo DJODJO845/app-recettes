@@ -63,6 +63,13 @@ interface Tranche {
   couleur: string;
 }
 
+/** "The Complete Snowboard — Dawn" plutôt que juste "The Complete Snowboard" : la
+ * variante (taille, couleur...) est l'info qu'un marchand regarde pour savoir quelle
+ * déclinaison précise se vend. */
+function libelleVente(vente: MeilleureVente): string {
+  return vente.titreVariante ? `${vente.titreProduit} — ${vente.titreVariante}` : vente.titreProduit;
+}
+
 /**
  * Regroupe les meilleures ventes en tranches de camembert : les N premières
  * individuellement, le reste (au-delà de NOMBRE_TRANCHES_CAMEMBERT, ou simplement non
@@ -78,7 +85,7 @@ function construireTranches(meilleuresVentes: MeilleureVente[], totalVentes: num
   const montantAutres = totalVentes - montantTop;
 
   const tranches: Tranche[] = top.map((vente, index) => ({
-    label: vente.titreProduit,
+    label: libelleVente(vente),
     montant: vente.montant,
     pourcentage: (vente.montant / totalVentes) * 100,
     couleur: `var(${COULEURS_SERIES[index]})`,
@@ -236,8 +243,8 @@ export default function Statistiques() {
             </s-table-header-row>
             <s-table-body>
               {meilleuresVentes.map((produit) => (
-                <s-table-row key={produit.titreProduit}>
-                  <s-table-cell>{produit.titreProduit}</s-table-cell>
+                <s-table-row key={`${produit.titreProduit}-${produit.titreVariante ?? ""}`}>
+                  <s-table-cell>{libelleVente(produit)}</s-table-cell>
                   <s-table-cell>{produit.quantite}</s-table-cell>
                   <s-table-cell>{formateurEUR.format(produit.montant)}</s-table-cell>
                 </s-table-row>

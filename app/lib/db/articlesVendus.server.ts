@@ -49,14 +49,16 @@ export async function enregistrerArticlesVendus(
 
 export interface MeilleureVente {
   titreProduit: string;
+  titreVariante: string | null;
   quantite: number;
   montant: number;
 }
 
 /**
- * Les produits les plus vendus sur une période, groupés par titre (pas par variante :
- * un éclatement par variante produirait souvent une liste de quasi-doublons peu
- * lisible pour un premier aperçu), classés par CA généré décroissant.
+ * Les produits les plus vendus sur une période, groupés par titre ET variante (ex.
+ * taille, couleur) : un marchand veut voir quelle déclinaison précise se vend, pas
+ * juste le produit générique (voir discussion du 13 octobre 2026). Classés par CA
+ * généré décroissant.
  */
 export async function obtenirMeilleuresVentes(
   shopDomain: string,
@@ -66,7 +68,7 @@ export async function obtenirMeilleuresVentes(
 ): Promise<MeilleureVente[]> {
   const resultat = await executerAvecContexteBoutique(shopDomain, (tx) =>
     tx.articleVendu.groupBy({
-      by: ["titreProduit"],
+      by: ["titreProduit", "titreVariante"],
       where: { shopDomain, dateVente: { gte: debut, lte: fin } },
       _sum: { quantite: true, montant: true },
       orderBy: { _sum: { montant: "desc" } },
@@ -76,6 +78,7 @@ export async function obtenirMeilleuresVentes(
 
   return resultat.map((ligne) => ({
     titreProduit: ligne.titreProduit,
+    titreVariante: ligne.titreVariante,
     quantite: ligne._sum.quantite ?? 0,
     montant: Number(ligne._sum.montant ?? 0),
   }));
