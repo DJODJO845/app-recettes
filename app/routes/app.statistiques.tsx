@@ -265,22 +265,26 @@ export default function Statistiques() {
               Peut signaler un souci (taille, qualité, description) — ne compte pas
               dans le CA des meilleures ventes, qui exclut déjà ce qui est remboursé.
             </s-text>
-            <s-stack direction="block" gap="small-300">
-              {tauxRemboursement.map((produit) => (
-                <s-stack
-                  key={`${produit.titreProduit}-${produit.titreVariante ?? ""}`}
-                  direction="inline"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <s-text>{libelleVente(produit)}</s-text>
-                  <s-stack direction="inline" gap="small-200" alignItems="center">
-                    <s-badge tone="warning">{produit.tauxRemboursement.toFixed(0)} % remboursé</s-badge>
-                    <s-text color="subdued">{formateurEUR.format(produit.montantRembourse)}</s-text>
-                  </s-stack>
-                </s-stack>
-              ))}
-            </s-stack>
+            {/* Trié par taux décroissant (voir obtenirTauxRemboursement) : le pire
+                en premier, pour repérer tout de suite le produit à surveiller. */}
+            <s-table variant="list" paginate={false}>
+              <s-table-header-row>
+                <s-table-header listSlot="primary">Produit</s-table-header>
+                <s-table-header>Taux remboursé</s-table-header>
+                <s-table-header format="currency">Montant remboursé</s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {tauxRemboursement.map((produit) => (
+                  <s-table-row key={`${produit.titreProduit}-${produit.titreVariante ?? ""}`}>
+                    <s-table-cell>{libelleVente(produit)}</s-table-cell>
+                    <s-table-cell>
+                      <s-badge tone="warning">{produit.tauxRemboursement.toFixed(0)} %</s-badge>
+                    </s-table-cell>
+                    <s-table-cell>{formateurEUR.format(produit.montantRembourse)}</s-table-cell>
+                  </s-table-row>
+                ))}
+              </s-table-body>
+            </s-table>
           </s-stack>
         </s-section>
       )}
