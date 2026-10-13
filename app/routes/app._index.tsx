@@ -269,6 +269,12 @@ export default function Dashboard() {
 
       <s-section heading="Jauge du plafond annuel">
         <s-stack direction="block" gap="base">
+          {/* Répète ici (plutôt que seulement dans le chiffre-clé plus haut, potentiellement
+              déjà scrollé hors de vue) où en est le CA annuel : sans ce texte, la jauge seule
+              à 2 % remplie est quasi invisible et ne dit rien de concret par elle-même. */}
+          <s-text type="strong">
+            {formateurEUR.format(totaux.caAnnuelEncaisse)} sur {formateurEUR.format(plafond)} ({pourcentagePlafond} %)
+          </s-text>
           <div style={{ position: "relative", height: "16px", width: "100%", background: "var(--piste-jauge)", borderRadius: "8px", overflow: "hidden" }}>
             <div
               style={{
@@ -365,7 +371,7 @@ export default function Dashboard() {
                 title={`${point.label} : ${formateurEUR.format(point.ca)}`}
                 style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}
               >
-                {estMoisCourant && (
+                {point.ca > 0 && (
                   <s-text color="subdued">{formateurEUR.format(point.ca)}</s-text>
                 )}
                 <div
