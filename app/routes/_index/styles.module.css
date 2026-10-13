@@ -1,78 +1,193 @@
-.index {
-  align-items: center;
-  display: flex;
-  justify-content: center;
-  height: 100%;
+/* Page publique (pas de composants Polaris) : couleurs toutes explicites, jamais
+   d'héritage ou de media query prefers-color-scheme — un navigateur ou OS en mode
+   sombre forcé a déjà rendu du texte illisible sur cette page par le passé (police
+   serif par défaut, cf. commit du 9 octobre 2026), même piège que sur les versions
+   imprimables et la politique de confidentialité. */
+.page {
+  min-height: 100%;
   width: 100%;
-  text-align: center;
-  padding: 1rem;
-  /* La police Inter est chargée (root.tsx), mais rien ici ne demandait à s'en servir :
-     cette page publique (pas de composants Polaris, qui l'appliquent eux-mêmes)
-     retombait donc sur le serif par défaut du navigateur, détonnant avec le reste
-     de l'app — repéré en test réel le 9 octobre 2026. */
+  margin: 0 auto;
+  max-width: 48rem;
+  padding: 3rem 1.25rem 2rem;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1a1a1a;
+  background: #ffffff;
 }
 
-.heading,
-.text {
-  padding: 0;
-  margin: 0;
+.hero {
+  text-align: center;
 }
 
-.text {
-  font-size: 1.2rem;
-  padding-bottom: 2rem;
+.eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #0e6b5c;
+  text-transform: uppercase;
 }
 
-.content {
+.heading {
+  margin: 0 0 1rem;
+  font-size: 2rem;
+  line-height: 1.2;
+  color: #0b0b0b;
+}
+
+.sousTitre {
+  margin: 0 auto;
+  max-width: 34rem;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #52514e;
+}
+
+.cta {
+  margin-top: 2rem;
   display: grid;
-  gap: 2rem;
+  gap: 0.6rem;
+  justify-items: center;
+}
+
+.bouton {
+  display: inline-block;
+  padding: 0.85rem 1.75rem;
+  border-radius: 8px;
+  background: #0e6b5c;
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bouton:hover {
+  background: #0a5547;
+}
+
+.prix {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6b6a65;
+}
+
+.fonctionnalites {
+  margin-top: 3.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+@media only screen and (max-width: 40rem) {
+  .fonctionnalites {
+    grid-template-columns: 1fr;
+  }
+
+  .heading {
+    font-size: 1.6rem;
+  }
+}
+
+.carte {
+  padding: 1.25rem;
+  border: 1px solid #e1e0d9;
+  border-radius: 10px;
+  background: #fafaf8;
+  text-align: left;
+}
+
+.carteTitre {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: #0b0b0b;
+}
+
+.carteTexte {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #52514e;
+}
+
+.pourquoi {
+  margin-top: 3.5rem;
+  padding: 1.75rem;
+  border-radius: 10px;
+  background: #eef6f4;
+  text-align: left;
+}
+
+.sectionTitre {
+  margin: 0 0 0.75rem;
+  font-size: 1.2rem;
+  color: #0b0b0b;
+}
+
+.sectionTexte {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #33322f;
+}
+
+.pied {
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e1e0d9;
+  text-align: center;
+}
+
+.connexion {
+  text-align: left;
+  max-width: 22rem;
+  margin: 0 auto 1.5rem;
+  font-size: 0.95rem;
+  color: #52514e;
+}
+
+.connexion summary {
+  cursor: pointer;
+  color: #0e6b5c;
+  font-weight: 600;
 }
 
 .form {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin: 0 auto;
-  gap: 1rem;
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.6rem;
 }
 
 .label {
   display: grid;
-  gap: 0.2rem;
-  max-width: 20rem;
+  gap: 0.25rem;
   text-align: left;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  color: #33322f;
 }
 
 .input {
-  padding: 0.4rem;
+  padding: 0.5rem;
+  border: 1px solid #c3c2b7;
+  border-radius: 6px;
+  font-size: 0.95rem;
 }
 
-.button {
-  padding: 0.4rem;
+.boutonSecondaire {
+  justify-self: start;
+  padding: 0.5rem 1rem;
+  border: 1px solid #0e6b5c;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0e6b5c;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.list {
-  list-style: none;
-  padding: 0;
-  padding-top: 3rem;
+.piedLiens {
   margin: 0;
-  display: flex;
-  gap: 2rem;
+  font-size: 0.85rem;
 }
 
-.list > li {
-  max-width: 20rem;
-  text-align: left;
-}
-
-@media only screen and (max-width: 50rem) {
-  .list {
-    display: block;
-  }
-
-  .list > li {
-    padding-bottom: 1rem;
-  }
+.piedLiens a {
+  color: #52514e;
 }

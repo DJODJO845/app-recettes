@@ -1,11 +1,26 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { redirect, Form, useLoaderData } from "react-router";
+import { redirect, Form, Link, useLoaderData } from "react-router";
 
 import { login } from "../../shopify.server";
 
 import styles from "./styles.module.css";
 
-export const meta: MetaFunction = () => [{ title: "Recettes URSSAF" }];
+const URL_APP_STORE = "https://apps.shopify.com/recettes-urssaf?locale=fr";
+
+export const meta: MetaFunction = () => [
+  { title: "Recettes URSSAF — Le CA encaissé de votre micro-entreprise, calculé seul" },
+  {
+    name: "description",
+    content:
+      "Livre des recettes automatique et montant exact à déclarer à l'URSSAF, calculés depuis vos commandes Shopify. 9,99 €/mois, 7 jours d'essai gratuit.",
+  },
+  // Page publique consultée hors de l'iframe Shopify Admin (navigateur mobile
+  // normal) : le mode sombre forcé de certains navigateurs/OS peut rendre le
+  // texte illisible s'il ne repose que sur l'héritage CSS — même bug déjà
+  // rencontré et corrigé sur politique-confidentialite.tsx et les versions
+  // imprimables.
+  { name: "color-scheme", content: "light" },
+];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -26,46 +41,86 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return { showForm: Boolean(login) };
 };
 
+const FONCTIONNALITES = [
+  {
+    titre: "Livre des recettes automatique",
+    texte: "Généré depuis vos commandes, paiements et remboursements Shopify — chronologique et conforme, sans rien saisir à la main.",
+  },
+  {
+    titre: "Le bon montant, pas une estimation",
+    texte: "Calculé selon le principe d'encaissement : remboursements déduits, cartes cadeaux exclues tant qu'elles ne sont pas utilisées.",
+  },
+  {
+    titre: "Alertes avant le plafond",
+    texte: "Suivi en continu de votre CA annuel, avec projection de la date à laquelle vous l'atteindriez au rythme actuel.",
+  },
+  {
+    titre: "Export et déclaration prêts",
+    texte: "CSV, version imprimable et fiche de déclaration par période — tout ce qu'il faut au moment de déclarer.",
+  },
+] as const;
+
 export default function App() {
   const { showForm } = useLoaderData<typeof loader>();
 
   return (
-    <div className={styles.index}>
-      <div className={styles.content}>
-        <h1 className={styles.heading}>Recettes URSSAF</h1>
-        <p className={styles.text}>
-          Le livre des recettes de votre micro-entreprise généré automatiquement, et
-          le montant exact de chiffre d&apos;affaires encaissé à déclarer chaque
-          période.
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <p className={styles.eyebrow}>Pour les micro-entrepreneurs qui vendent sur Shopify</p>
+        <h1 className={styles.heading}>Le chiffre d&apos;affaires encaissé de votre boutique, calculé seul</h1>
+        <p className={styles.sousTitre}>
+          Le livre des recettes de votre micro-entreprise se génère automatiquement, et
+          le montant exact à déclarer à l&apos;URSSAF chaque période est toujours sous
+          les yeux — sans tableur, sans recompter à la main.
         </p>
+        <div className={styles.cta}>
+          <a className={styles.bouton} href={URL_APP_STORE} target="_blank" rel="noreferrer">
+            Installer sur Shopify
+          </a>
+          <p className={styles.prix}>9,99 €/mois · 7 jours d&apos;essai gratuit</p>
+        </div>
+      </header>
+
+      <section className={styles.fonctionnalites} aria-label="Fonctionnalités">
+        {FONCTIONNALITES.map((fonctionnalite) => (
+          <div key={fonctionnalite.titre} className={styles.carte}>
+            <h2 className={styles.carteTitre}>{fonctionnalite.titre}</h2>
+            <p className={styles.carteTexte}>{fonctionnalite.texte}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className={styles.pourquoi}>
+        <h2 className={styles.sectionTitre}>Pourquoi pas juste un tableur ?</h2>
+        <p className={styles.sectionTexte}>
+          Le CA à déclarer est celui <strong>réellement encaissé</strong>, pas celui de
+          vos commandes facturées — et la différence piège souvent une déclaration
+          faite à la main : un remboursement partiel, un paiement en plusieurs fois,
+          une carte cadeau vendue puis utilisée plus tard. L&apos;app applique ces
+          règles pour vous, à chaque commande, sans que vous ayez à les connaître par
+          cœur.
+        </p>
+      </section>
+
+      <footer className={styles.pied}>
         {showForm && (
-          <Form className={styles.form} method="post" action="/auth/login">
-            <label className={styles.label}>
-              <span>Domaine de la boutique</span>
-              <input className={styles.input} type="text" name="shop" />
-              <span>ex : ma-boutique.myshopify.com</span>
-            </label>
-            <button className={styles.button} type="submit">
-              Se connecter
-            </button>
-          </Form>
+          <details className={styles.connexion}>
+            <summary>Déjà cliente ou client ? Se connecter</summary>
+            <Form className={styles.form} method="post" action="/auth/login">
+              <label className={styles.label}>
+                <span>Domaine de la boutique</span>
+                <input className={styles.input} type="text" name="shop" placeholder="ma-boutique.myshopify.com" />
+              </label>
+              <button className={styles.boutonSecondaire} type="submit">
+                Se connecter
+              </button>
+            </Form>
+          </details>
         )}
-        <ul className={styles.list}>
-          <li>
-            <strong>Livre des recettes automatique.</strong> Généré à partir de vos
-            commandes, paiements et remboursements Shopify.
-          </li>
-          <li>
-            <strong>Montant à déclarer à l&apos;URSSAF.</strong> Calculé selon le
-            principe d&apos;encaissement, sans avoir à faire le calcul vous-même.
-          </li>
-          <li>
-            <strong>Alertes avant de dépasser votre plafond.</strong> Suivi en
-            continu du chiffre d&apos;affaires annuel, pour ne jamais perdre votre
-            statut de micro-entrepreneur sans le voir venir.
-          </li>
-        </ul>
-      </div>
+        <p className={styles.piedLiens}>
+          <Link to="/politique-confidentialite">Politique de confidentialité</Link>
+        </p>
+      </footer>
     </div>
   );
 }
