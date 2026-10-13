@@ -114,12 +114,14 @@ export interface TauxRemboursement {
 }
 
 /**
- * Produits avec le taux de remboursement le plus élevé sur une période — vue séparée
- * des "Meilleures ventes" (CA net), volontairement : un produit souvent remboursé
- * peut signaler un souci (qualité, taille, description trompeuse), une info que la
- * seule liste des meilleures ventes masquerait complètement puisqu'il en est exclu.
- * Ne garde que les produits avec au moins un remboursement (taux > 0) : pas utile
- * d'afficher une longue liste à 0%.
+ * Produits avec le plus d'argent remboursé sur une période (classés par montant, pas
+ * par taux en %) — vue séparée des "Meilleures ventes" (CA net), volontairement : un
+ * produit souvent remboursé peut signaler un souci (qualité, taille, description
+ * trompeuse), une info que la seule liste des meilleures ventes masquerait
+ * complètement puisqu'il en est exclu. Trié par montant (pas par taux) : un produit
+ * remboursé à 100% pour 10€ pèse moins dans la réalité qu'un produit remboursé à 5%
+ * pour 500€ — c'est l'impact en argent qui compte ici. Ne garde que les produits avec
+ * au moins un remboursement : pas utile d'afficher une longue liste à 0€.
  */
 export async function obtenirTauxRemboursement(
   shopDomain: string,
@@ -148,7 +150,7 @@ export async function obtenirTauxRemboursement(
         tauxRemboursement: montantBrut > 0 ? (montantRembourse / montantBrut) * 100 : 0,
       };
     })
-    .filter((ligne) => ligne.tauxRemboursement > 0)
-    .sort((a, b) => b.tauxRemboursement - a.tauxRemboursement)
+    .filter((ligne) => ligne.montantRembourse > 0.005)
+    .sort((a, b) => b.montantRembourse - a.montantRembourse)
     .slice(0, limite);
 }
