@@ -20,7 +20,7 @@ function origineReelle(request: Request): string {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, billing } = await authenticateAdmin(request);
+  const { session, billing, admin } = await authenticateAdmin(request);
   await obtenirOuCreerBoutique(session.shop);
 
   // Facturation TEST par défaut (aucune carte requise), quel que soit
@@ -30,9 +30,34 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // qui vient de se produire). Passer en facturation réelle est désormais un
   // choix explicite : variable d'env SHOPIFY_BILLING_LIVE=true sur Render,
   // à activer seulement une fois prêt à facturer de vrais clients.
-  const facturationReelle = process.env.SHOPIFY_BILLING_LIVE === "true";
-
+  //
+  // Mais même avec ce flag actif, une boutique de développement (gratuite,
+  // sans plan Shopify payant) ne peut structurellement jamais valider un
+  // abonnement réel — Shopify renvoie "La boutique ne peut pas accepter le
+  // montant facturé fourni", quel que soit le moyen de paiement enregistré
+  // (vu en test le 13 octobre 2026). Ce n'est pas un bug ponctuel à
+  // contourner à la main à chaque fois : on détecte la boutique de
+  // développement via shop.plan.partnerDevelopment (champ officiel Shopify)
+  // et on force la facturation test pour elle, sans jamais affecter les
+  // vraies boutiques (déjà sur un plan payant, donc jamais détectées comme
+  // telles).
   try {
+    const reponseShop = await admin.graphql(`#graphql
+      query VerifierBoutiqueDeDeveloppement {
+        shop {
+          plan {
+            partnerDevelopment
+          }
+        }
+      }
+    `);
+    const jsonShop = (await reponseShop.json()) as {
+      data?: { shop?: { plan?: { partnerDevelopment?: boolean } } };
+    };
+    const estBoutiqueDeDeveloppement = jsonShop.data?.shop?.plan?.partnerDevelopment ?? false;
+
+    const facturationReelle = process.env.SHOPIFY_BILLING_LIVE === "true" && !estBoutiqueDeDeveloppement;
+
     // Bloque l'accès tant que l'abonnement (ou l'essai de 7 jours) n'est pas
     // actif — billing.request() lève une redirection vers la page de
     // confirmation Shopify, donc rien après cet appel ne s'exécute si l'essai
